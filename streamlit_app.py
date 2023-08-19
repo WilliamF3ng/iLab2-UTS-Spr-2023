@@ -1,72 +1,84 @@
+# Goal to create a Streamlit web app that will allow the user to input in hours they've worked and produce a numerical
+# payment amount that they can use to compare with their payslip to find underpayment.
+# ---------------------------------------------------
+# Experimental UI
+
+# Ask the user if they are an employee or employer
+
+# Ask the user which award they fall under:
+# - Fast Food Industry Award (MA000003)
+# - General Retail Industry Award (MA000004)
+# - Hospitality Industry (General) Award (MA000009)
+
+# Ask the user if they are FT, PT or Casual
+
 import streamlit as st
-import requests
-import pandas as pd
-import datetime
+# from googletrans import Translator
 
-# The end product will be a streamlit app.
-# We will ensure the data will always be the latest file at the time of the user access, by using the user computer's
-# datetime to get the current year. Meaning this functionality should persist, unless the user's computer does not have
-# the correct time or not connected to the internet.
-
-#
-
-# Create a function that will use the URL, category (award, classifications, wage allowances, expense allowances,
-# penalty rates
-def download_and_process_excel(url, category, year):
-    # Construct the URL based on the provided category and year
-    full_url = f"{url}-{year}.xlsx"
-
-    # Send a GET request to download the file
-    response = requests.get(full_url)
-
-    if response.status_code == 200:
-        # Save the Excel file locally
-        file_name = f"{category}_export_{year}.xlsx"
-        with open(file_name, "wb") as file:
-            file.write(response.content)
-
-        # Read the Excel file using pandas
-        df = pd.read_excel(file_name)
-
-        # Now you can work with the DataFrame (df) as needed
-        return df
-    else:
-        st.error(f"Failed to download the file for {category} - {year}")
-        return None
-
+#def translate_text(text, target_lang):
+#    translator = Translator()
+#    translated_text = translator.translate(text, dest=target_lang)
+#    return translated_text.text if translated_text is not None else text
 
 def main():
-    st.title("Web Scraping and Displaying Excel Data with Streamlit")
+    st.title("Know Your Wages (KYW)")
 
-    current_year = datetime.datetime.now().year
+    # Google Translate toggle
+    translate_lang = st.selectbox("Translate to: (Unfortunately need to use a Google Cloud API, new subscribers have $300 credits!)",
+                                  ["English", "Chinese", "Hindi"])
+    target_lang = "en"
+    if translate_lang == "Chinese":
+        target_lang = "zh-CN"
+    elif translate_lang == "Hindi":
+        target_lang = "hi"
 
-    urls = [
-        "https://www.fwc.gov.au/documents/awards/pay-database/map-award-export",
-        "https://www.fwc.gov.au/documents/awards/pay-database/map-classification-export",
-        "https://www.fwc.gov.au/documents/awards/pay-database/map-wage-allowance-export",
-        "https://www.fwc.gov.au/documents/awards/pay-database/map-expense-allowance-export",
-        "https://www.fwc.gov.au/documents/awards/pay-database/map-penalty-export"
-    ]
-# Using an index here to determine which category to substitute into the scraper
-    categories = [
-        "award",
-        "classification",
-        "wage_allowance",
-        "expense_allowance",
-        "penalty"
-    ]
+    # Ask user if they are an employee or employer
+    user_type = st.radio("Are you an employee or employer?", ("Employee", "Employer"))
 
-    st.write("Select a category to download and display data:")
+    # Display pay award options with descriptions
+    #st.subheader("Select Your Pay Award:")
+    if user_type == "Employee":
+        st.radio("Pay Award:", ("Fast Food Industry Award (MA000003) - Description...",
+                                "General Retail Industry Award (MA000004) - Description...",
+                                "Hospitality Industry (General) Award (MA000009) - Description..."))
 
-    selected_category = st.selectbox("Category", categories)
+    else:
+        st.markdown("### Pay Award Descriptions:")
+        st.write("Choose the relevant pay award for more information about each award.")
+        if st.checkbox("Fast Food Industry Award (MA000003)"):
+            st.write("Description for Fast Food Industry Award")
+        if st.checkbox("General Retail Industry Award (MA000004)"):
+            st.write("Description for General Retail Industry Award")
+        if st.checkbox("Hospitality Industry (General) Award (MA000009)"):
+            st.write("Description for Hospitality Industry Award")
 
-    if st.button("Download and Display"):
-        index = categories.index(selected_category)
-        df = download_and_process_excel(urls[index], selected_category, current_year)
-        if df is not None:
-            st.write("Displaying data for:", selected_category)
-            st.write(df)
+    # Ask user about employment type
+    employment_type = st.radio("Select Employment Type:", ("Full Time", "Part Time", "Casual"))
 
+    # User input for hours worked
+    hours_worked = st.number_input("Enter hours worked:", min_value=0.0, step=0.1)
+
+    # Calculate pay
+    base_pay_rate = 20  # random value
+    overtime_rate = 1.5  # random value
+
+    if hours_worked <= 38:
+        total_pay = hours_worked * base_pay_rate
+    else:
+        overtime_hours = hours_worked - 38
+        total_pay = (38 * base_pay_rate) + (overtime_hours * base_pay_rate * overtime_rate)
+
+    st.subheader("Pay Details:")
+    st.write(f"Hours Worked: {hours_worked} hours")
+    st.write(f"Total Pay: ${total_pay:.2f}")
+
+    st.write(f"According to your chosen award, you should've been paid ____ amount!")
+
+    st.subheader("Next steps")
+    st.write("If you have been underpaid, please speak to your employer or refer to the following links for more help.")
+    st.write(f"Australian Fair Work Ombudsman - https://www.fairwork.gov.au/ or call 13 13 94, "
+             f"open 8am to 5:30pm Monday to Friday, excluding public holidays.")
+    st.write(f"For translation services and language assistance, call 13 14 50.")
 
 if __name__ == "__main__":
     main()
