@@ -39,7 +39,7 @@ def download_and_process_excel(url, categories, year):
         return None
 
 def main():
-    st.title("Know Your Wages (KYW)")
+    st.title(":money_with_wings:  Know Your Wages (KYW)")
 
 #############
     # Google Translate toggle
