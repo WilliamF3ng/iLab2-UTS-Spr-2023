@@ -136,6 +136,10 @@ def main():
     days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
     hours_worked = {}
 
+
+    st.date_input("Enter date")
+
+
     for day in days_of_week:
         hours = st.number_input(f"Enter hours worked on {day}:", min_value=0.0, step=0.1)
         hours_worked[day] = hours
