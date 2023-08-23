@@ -1,27 +1,7 @@
-# Goal to create a Streamlit web app that will allow the user to input in hours they've worked and produce a numerical
-# payment amount that they can use to compare with their payslip to find underpayment.
-# ---------------------------------------------------
-# Experimental UI
-
-# Ask the user if they are an employee or employer
-
-# Ask the user which award they fall under:
-# - Fast Food Industry Award (MA000003)
-# - General Retail Industry Award (MA000004)
-# - Hospitality Industry (General) Award (MA000009)
-
-# Ask the user if they are FT, PT or Casual
-
 import streamlit as st
 import datetime
 import pandas as pd
 import requests
-# from googletrans import Translator
-
-#def translate_text(text, target_lang):
-#    translator = Translator()
-#    translated_text = translator.translate(text, dest=target_lang)
-#    return translated_text.text if translated_text is not None else text
 
 def download_and_process_excel(url, categories, year):
     full_url = f"{url}-{year}.xlsx"
@@ -41,7 +21,6 @@ def download_and_process_excel(url, categories, year):
 def main():
     st.title(":money_with_wings:  Know Your Wages (KYW)")
 
-#############
     # Google Translate toggle
     translate_lang = st.selectbox("Translate to: (Unfortunately need to use a Google Cloud API, new subscribers have $300 credits!)",
                                   ["English", "Chinese", "Hindi"])
@@ -50,17 +29,11 @@ def main():
         target_lang = "zh-CN"
     elif translate_lang == "Hindi":
         target_lang = "hi"
-#############
 
     download_url = "https://www.fwc.gov.au/documents/awards/pay-database/map-classification-export"
     categories = "classification"
 
-   # categories = [ "award", "classification", "wage_allowance", "expense_allowance", "penalty"]
-
     year = datetime.datetime.now().year
-
-    #st.info("This app requires a Google Cloud API key for translation, which might incur costs.")
-
     user_type = st.radio("Are you an employee or employer?", ("Employee", "Employer"))
 
     if user_type == "Employee":
@@ -121,8 +94,6 @@ def main():
                                                  "placeholder2",
                                                  "placeholder3",
                                                  "placeholder4"))
-            #award_classifications = filtered_df["classification"].unique()
-            #selected_classification = st.selectbox("Select Award Classification:", award_classifications)
 
             # Filter further by award classification
             filtered_df = filtered_df[filtered_df["classification"] == award_classification]
@@ -135,9 +106,6 @@ def main():
             selected_data = filtered_df[selected_columns]
             st.subheader("Your pay rates are:")
             st.write(selected_data)
-
-            #st.subheader("Filtered Data:")
-            #st.dataframe(filtered_df)
 
         else:
             st.error("Failed to download and process the dataset.")
@@ -169,56 +137,21 @@ def main():
     hours_worked = {}
 
     for day in days_of_week:
-        #hours = st.number_input(f"Enter hours worked on {day}:", key=day, min_value=0.0, step=0.1)
         hours = st.number_input(f"Enter hours worked on {day}:", min_value=0.0, step=0.1)
-
-        # ^ Having an issue where the user needs to press 'enter' while inputting their hours but inadverently triggering the script to run.
-        # Hence change the input field to text and then use a float function to bring it back to a number - doesn't work, reverted back!
         hours_worked[day] = hours
 
     st.subheader("Hours Worked:")
     hours_df = pd.DataFrame(hours_worked.items(), columns=["Day", "Hours Worked"])
     st.table(hours_df)
 
-    #for day, hours in hours_worked.items():
-    #    st.write(f"{day}: {hours} hours")
-
     # Calculate total pay based on hours worked
     total_hours = sum(hours_worked.values())
-
-    # 20.08.2023 prototype assumes user is 21years and over (adult)
 
     base_pay_rate = filtered_df.loc[filtered_df["classification"] == award_classification, "calculatedRate"].iloc[0]
     overtime_hours = total_hours - 38
     casual_loading = (1.25 * base_pay_rate) # casual loading is 25% of the base_pay_rate
     overtime_rate = (1.5 * base_pay_rate)
     total_pay = 0.0
-
-    #if total_hours <= 38:
-    #    total_pay = total_hours * base_pay_rate
-    #else:
-    #    overtime_hours = total_hours - 38
-    #    total_pay = (38 * base_pay_rate) + (overtime_hours * base_pay_rate * overtime_rate)
-
-    # if user_type == "Full Time":
-    #     # Full Time calculations
-    #     if total_hours >= 38:
-    #         total_pay = (total_hours * base_pay_rate) + (overtime_hours * overtime_rate)
-    #     else:
-    #         total_pay = total_hours * base_pay_rate
-    #
-    # elif user_type == "Part Time":
-    #     # Part Time calculations
-    #     if total_hours <= 20:
-    #         total_pay = total_hours * base_pay_rate
-    #     elif total_hours >= 38:
-    #         total_pay = (total_hours * base_pay_rate) + (overtime_hours * overtime_rate)
-    #     else:
-    #         total_pay = total_hours * base_pay_rate
-    #
-    # elif user_type == "Casual":
-    #     # Casual calculations
-    #     total_pay = total_hours * casual_loading
 
     if employment_type == "Full Time":
         # Full Time calculations
@@ -249,17 +182,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-# 20th August 2023 Notes
-
-# Assumptions
-## User is AD (adult)
-## Overtime is calculated at a 38 hour week currently which might differ depending on the award
-
-# To-do list
-## Add weekend penalty rate calculation
-## Add download/save view button, to export the calculations
-## Show user the calculation steps in a drop down menu
-
-# Wishlist
-## OCR capability to upload a timesheet
