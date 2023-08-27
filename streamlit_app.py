@@ -1,7 +1,13 @@
 import streamlit as st
+#from streamlit_extras.grid import grid # Playing around with pip install streamlit-extras
 import datetime
 import pandas as pd
 import requests
+
+
+# Translation module
+from googletrans import Translator
+translator = Translator()
 
 def download_and_process_excel(url, categories, year):
     full_url = f"{url}-{year}.xlsx"
@@ -21,12 +27,15 @@ def download_and_process_excel(url, categories, year):
 def main():
     st.title(":money_with_wings:  Know Your Wages (KYW)")
 
-    # Google Translate toggle
-    translate_lang = st.selectbox("Translate to: (Unfortunately need to use a Google Cloud API, new subscribers have $300 credits!)",
-                                  ["English", "Chinese", "Hindi"])
+    # Google Translate toggle - working for a word to word translation but not highly semantic
+    # Human trial attempt with Arabic - showing word to word translation, despite GTranslate web showing exact same as English
+    translate_lang = st.selectbox("Supported languages are: :flag-cn: :flag-in: . Translate to: ",
+                                  ["English", "Chinese", "Hindi", "Arabic"])
     target_lang = "en"
     if translate_lang == "Chinese":
         target_lang = "zh-CN"
+    elif translate_lang == "Arabic":
+        target_lang = "ar"
     elif translate_lang == "Hindi":
         target_lang = "hi"
 
@@ -40,16 +49,22 @@ def main():
         awards = ["MA000003", "MA000004", "MA000009"]
         selected_award = st.radio("Select Pay Award:", awards)
 
+#### Experimenting with translate functionality
+
         # Add description/info about the selected award
+        # if selected_award == "MA000003":
+        #     st.write("This award covers employers and employees working in the fast food industry like: "
+        #              "employees taking orders, including via an app, cooking and selling fast food, "
+        #              "baristas, delivery drivers, and supervisors.")
         if selected_award == "MA000003":
-            st.write("This award covers employers and employees working in the fast food industry like: "
+            st.write(translator.translate("This pay award covers employers and employees working in the fast food industry like: "
                      "employees taking orders, including via an app, cooking and selling fast food, "
-                     "baristas, delivery drivers, supervisors of these duties and cafes.")
+                     "baristas, delivery drivers, and supervisors.", dest=target_lang).text)
         elif selected_award == "MA000004":
             st.write("This award covers employers and employees working in the general retail industry like: "
                      "check-out operators, sales assistants, stock hands, shelf stackers, salespersons, store managers,"
                      "tradespersons (butchers, bakers, florists) and travel agencies."
-            )
+                     )
         elif selected_award == "MA000009":
             st.write("This award covers employers and employees working in the hospitality industry like: "
                      "waiters/waitresses, kitchen hands, cooks/chefs, housekeepers, concierge/reception staff"
@@ -137,7 +152,7 @@ def main():
     hours_worked = {}
 
 
-    st.date_input("Enter date")
+    #st.date_input("Enter date")
 
 
     for day in days_of_week:
@@ -152,27 +167,56 @@ def main():
     total_hours = sum(hours_worked.values())
 
     base_pay_rate = filtered_df.loc[filtered_df["classification"] == award_classification, "calculatedRate"].iloc[0]
-    overtime_hours = total_hours - 38
+    overtime_hours = max(0, total_hours - 38)
     casual_loading = (1.25 * base_pay_rate) # casual loading is 25% of the base_pay_rate
     overtime_rate = (1.5 * base_pay_rate)
-    total_pay = 0.0
 
-    if employment_type == "Full Time":
-        # Full Time calculations
-        overtime_hours = max(0, total_hours - 38)
-        total_pay = (total_hours * base_pay_rate) + (overtime_hours * overtime_rate)
+    # Casual penalty rates
+    casual_saturday_rate = (1.5 * base_pay_rate) # casual loading 25%, sat penalty 25%
 
-    elif employment_type == "Part Time":
-        # Part Time calculations
-        if total_hours <= 20:
-            total_pay = total_hours * base_pay_rate
-        else:
-            overtime_hours = max(0, total_hours - 20)
-            total_pay = (total_hours * base_pay_rate) + (overtime_hours * overtime_rate)
+    casual_sunday_rate_OT_before_3hrs = (1.75 * base_pay_rate) # casual loading 25%, sun penalty 50% and OT before 3hrs Mon to Sat
+    casual_OT_after_3hrs = (2.25 * base_pay_rate) # casual loading, OT after 3hrs Mon to Sat
+    # Disclaimer, both casual before and after 3hrs only relies on Monday to Saturday period, FWO has no mention of Sunday OT at of writing this note.
 
-    elif employment_type == "Casual":
-        # Casual calculations
-        total_pay = total_hours * casual_loading
+    casual_public_rate = (2.5 * base_pay_rate) # casual loading 25%, public 225%
+
+    # Permanent FT/PT rates
+    permanent_saturday_rate = (1.25 * base_pay_rate)
+    permanent_sunday_rate_OT_before_3hrs = (1.5 * base_pay_rate)
+    permanent_OT_after_3hrs = (2 * base_pay_rate)
+    permanent_public_rate = (2.25 * base_pay_rate)
+
+# THIS CODE LOGIC HAS BEEN TEST AND IS INCORRECT.
+
+    # total_pay = 0.0
+    # for day, hours in hours_worked.items():
+    #     if employment_type == "Full Time":
+    #     # Full Time calculations
+    #         if day == "Saturday":
+    #             total_pay += total_hours * permanent_saturday_rate
+    #         elif day == "Sunday":
+    #             total_pay += total_hours * permanent_sunday_rate_OT_before_3hrs
+    #         else:
+    #             total_pay = (total_hours * base_pay_rate) + (overtime_hours * overtime_rate)
+    #
+    #     elif employment_type == "Part Time":
+    #     # Part Time calculations
+    #         if total_hours <= 20:
+    #             total_pay = total_hours * base_pay_rate
+    #         else:
+    #             total_pay = (total_hours * base_pay_rate) + (overtime_hours * overtime_rate)
+    #
+    #     elif employment_type == "Casual":
+    #     # Casual calculations
+    #         if day == "Saturday":
+    #             total_pay += total_hours * casual_saturday_rate
+    #         elif day == "Sunday":
+    #             if hours <= 3:
+    #                 total_pay += hours * casual_sunday_rate_OT_before_3hrs
+    #         else:
+    #             total_pay += total_hours * casual_loading
+    # else:
+    #     total_pay += total_hours * base_pay_rate
 
     st.subheader("Pay Details:")
     st.write(f"Hours Worked: {total_hours} hours.")
