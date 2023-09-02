@@ -165,6 +165,8 @@ def main():
 
 ################################################# 2nd Sept Progress
 
+            # Version 1.9
+
             # Exclude baking employees who start work at odd hours like 2am start.
             # Filter by "Early morning shifts"
 
