@@ -1,10 +1,6 @@
 # INSTALLING REQUIRED LIBRARIES
 
 import streamlit as st # upgraded to 1.26.0 (released Aug 24th 2023)
-
-#from streamlit_extras.grid import grid
-# Playing around with pip install streamlit-extras
-
 import datetime
 import pandas as pd
 import requests
@@ -74,11 +70,17 @@ def main():
 
     year = datetime.datetime.now().year
 
+    st.header("Your details", divider="rainbow")
+
     user_type = st.radio(translator.translate("Are you an Employee or Employer?",dest=target_lang).text,
-                         ("Employee", "Employer"))
+                         ("Employee", "Employer"),
+                         captions=("Also known as a worker", "Also known as a boss"))
     if user_type == "Employee":
         awards = ["MA000003", "MA000004", "MA000009"]
-        selected_award = st.radio(translator.translate("What's your pay award?", dest=target_lang).text, awards)
+        selected_award = st.radio(translator.translate("What's your pay award?", dest=target_lang).text, awards,
+                                  captions=("Fast Food Industry Award",
+                                            "General Retail Industry Award",
+                                            "Hospitality Industry (General) Award"))
 
         if selected_award == "MA000003":
             st.write(translator.translate("This pay award covers employers and employees working in the fast food industry like: "
@@ -108,7 +110,10 @@ def main():
 
             # Ask user about employment type
             employment_type = st.radio(translator.translate("What's your Employment Type?",dest=target_lang).text,
-                                       ("Full Time", "Part Time", "Casual"))
+                                       ("Full Time", "Part Time", "Casual"),
+                                       captions=("Average 38 hours per week",
+                                                 "Less than 38 hours per work, but hours are regular",
+                                                 "No agreed pattern of work"))
 
             # What if you filter the dataset by parentClassification and then ask the user to select their classification
             filtered_df = filtered_df[(filtered_df["employeeRateTypeCode"] == "AD") | (filtered_df["employeeRateTypeCode"] == "JN")]
@@ -155,21 +160,16 @@ def main():
                 filtered_df_penalty = filtered_df_penalty[
                     ~filtered_df_penalty["clauseDescription"].str.contains("casual", case=False)]
 
-            # Making some large assumptions like
-            # excluding baking employees in 004
+            # Making some large assumptions like excluding baking employees in 004 due to odd start hours
+            filtered_df_penalty = filtered_df_penalty[~filtered_df_penalty["penaltyDescription"].
+            str.contains("Early morning shifts", case=False)]
 
             # Try to exclude shiftwork, but cannot as most migrants could be shiftworkers
             # filtered_df_penalty = filtered_df_penalty[~filtered_df_penalty["clauseDescription"].
             # str.contains("shiftwork and penalty rates", case=False)]
             #st.write(filtered_df_penalty)
 
-################################################# 2nd Sept Progress
-
-            # Version 1.9
-
-            # Exclude baking employees who start work at odd hours like 2am start.
-            # Filter by "Early morning shifts"
-
+            # DISPLAY THE PAY RATES BELOW
 
             # Select only the relevant columns
             selected_col_classification = ["baseRate", "baseRateType"] # add penalty rate calculations to this table too
@@ -178,7 +178,20 @@ def main():
             selected_col_penalty = ["clauseDescription","penaltyDescription","rate","penaltyCalculatedValue"]
             selected_data_penalty = filtered_df_penalty[selected_col_penalty]
 
-            st.header("Your pay rates are:", divider="rainbow")
+            st.header("Your pay rates", divider="rainbow")
+
+            # Store the user selections in separate lists - IDEA TO GIVE A USER SUMMARY, BUT NOT WORKING YET
+            # user_selected_type = []
+            # user_selected_award = []
+            # user_selected_employment = []
+            # user_selected_employment_level = []
+            #
+            # user_selected_type = ", ".join(user_type)
+            #
+            # st.subheader("What you've told us")
+            #
+            # st.write("User Type:", ", ".join(user_selected_type))
+            # st.write("Employment Types:", user_selected_employment_level)
 
             st.data_editor(selected_data_class,
                            column_config={
@@ -199,47 +212,86 @@ def main():
         else:
             st.error("Error failed to download. Please retry again later.")
 
-    else:
-        st.markdown("### Pay Award Descriptions:")
-        st.write("Choose the relevant pay award for more information about each award.")
-
-        if st.checkbox("Fast Food Industry Award (MA000003)"):
-            st.write("This award covers employers and employees working in the fast food industry like: "
-                     "employees taking orders, including via an app, cooking and selling fast food, "
-                     "baristas, delivery drivers, supervisors of these duties and cafes. "
-                     "For more info, visit https://www.fairwork.gov.au/employment-conditions/awards/awards-summary/ma000003-summary")
-
-        if st.checkbox("General Retail Industry Award (MA000004)"):
-            st.write("This award covers employers and employees working in the general retail industry like: "
-                     "check-out operators, sales assistants, stock hands, shelf stackers, salespersons, store managers,"
-                     "tradespersons (butchers, bakers, florists) and travel agencies. "
-                     "For more info, visit https://www.fairwork.gov.au/employment-conditions/awards/awards-summary/ma000004-summary")
-
-        if st.checkbox("Hospitality Industry (General) Award (MA000009)"):
-            st.write("This award covers employers and employees working in the hospitality industry like: "
-                     "waiters/waitresses, kitchen hands, cooks/chefs, housekeepers, concierge/reception staff"
-                     "gaming attendants, security officers, casino staff, catering staff and pub owners. "
-                     "For more info, visit https://www.fairwork.gov.au/employment-conditions/awards/awards-summary/ma000009-summary")
-
-    # Collect hours worked for each day of the week
-    # days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-    # hours_worked = {}
-
-    on = st.toggle("I didn't take a break")
-    if on:
-        st.write("30 mins lunch break will be deducted!")
-
-    on1 = st.toggle("Tick if today was a public holiday")
-    if on1: st.write("You have indicated that today is a public holiday!")
-
-    # for day in days_of_week:
-    #     hours = st.number_input(f"Enter hours worked on {day}:", min_value=0.0, step=0.1)
-    #     hours_worked[day] = hours
+    # else:
+    #     st.markdown("### Pay Award Descriptions")
+    #     st.write("Choose the relevant pay award for more information about each award.")
     #
-    # st.subheader("Hours Worked:")
-    # hours_df = pd.DataFrame(hours_worked.items(), columns=["Day", "Hours Worked"])
-    # st.table(hours_df)
+    #     if st.checkbox("Fast Food Industry Award (MA000003)"):
+    #         st.write("This award covers employers and employees working in the fast food industry like: "
+    #                  "employees taking orders, including via an app, cooking and selling fast food, "
+    #                  "baristas, delivery drivers, supervisors of these duties and cafes. "
+    #                  "For more info, visit https://www.fairwork.gov.au/employment-conditions/awards/awards-summary/ma000003-summary")
     #
+    #     if st.checkbox("General Retail Industry Award (MA000004)"):
+    #         st.write("This award covers employers and employees working in the general retail industry like: "
+    #                  "check-out operators, sales assistants, stock hands, shelf stackers, salespersons, store managers,"
+    #                  "tradespersons (butchers, bakers, florists) and travel agencies. "
+    #                  "For more info, visit https://www.fairwork.gov.au/employment-conditions/awards/awards-summary/ma000004-summary")
+    #
+    #     if st.checkbox("Hospitality Industry (General) Award (MA000009)"):
+    #         st.write("This award covers employers and employees working in the hospitality industry like: "
+    #                  "waiters/waitresses, kitchen hands, cooks/chefs, housekeepers, concierge/reception staff"
+    #                  "gaming attendants, security officers, casino staff, catering staff and pub owners. "
+    #                  "For more info, visit https://www.fairwork.gov.au/employment-conditions/awards/awards-summary/ma000009-summary")
+
+    # START OF THE HOURS INPUT MODULE
+
+        st.header("Enter your hours", divider="rainbow")
+
+        days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        day_data = {day: {"hours_worked": 0.0, "break_taken": False, "is_public_holiday": False} for day in days_of_week}
+
+        for index, day in enumerate(days_of_week):
+            col1, col2 = st.columns(2)
+
+            with col1:
+                hours = st.number_input(f"Enter hours worked on {day}:", min_value=0.0, step=0.1)
+                day_data[day]["hours_worked"] = round(hours, 1)
+
+            with col2:
+                day_data[day]["break_taken"] = st.toggle(f"No break on {day}")
+                day_data[day]["is_public_holiday"] = st.toggle(f"Public holiday on {day}")
+
+                if index < len(days_of_week) - 1:
+                    st.markdown("---")
+
+        st.subheader("Summary")
+        hours_df = pd.DataFrame(day_data).T
+
+        column_mapping = {
+        "hours_worked": "Hours Worked",
+        "break_taken": "Was a break taken?",
+        "is_public_holiday": "Was it a public holiday?"
+        }
+        boolean_mapping = {True: "Yes", False: "No"}
+        columns_to_map = ["break_taken", "is_public_holiday"]
+
+        hours_df[columns_to_map] = hours_df[columns_to_map].applymap(lambda x: boolean_mapping.get(x, x))
+        hours_df["hours_worked"] = hours_df["hours_worked"].apply(lambda x: round(x, 1))
+
+        styled_df = hours_df.rename(columns=column_mapping).style.set_table_styles([{
+            'selector': 'table',
+            'props': [('user-select', 'none')]
+        }]).set_properties(**{'text-align': 'center'})
+        st.table(styled_df)
+
+        total_hours_worked = sum([day["hours_worked"] for day in day_data.values()])
+        if any(day["break_taken"] for day in day_data.values()):
+            total_hours_worked -= 0.5  # 30 minutes for lunch usually
+
+        st.subheader(f"Total Hours Worked: {total_hours_worked:.2f} hours")
+
+    # START OF THE CALCULATION MODULE
+
+        st.header("Pay Details", divider="rainbow")
+
+        # ALL BELOW CODE NEEDS TO BE REVISED, OUTDATED AS OF 03/09/2023
+
+
+
+    # st.write(f"Hours Worked: {total_hours} hours.")
+    # st.write(f"According to your chosen award and classification level, your total pay is ${total_pay:.2f}.")
+
     # # Calculate total pay based on hours worked
     # total_hours = sum(hours_worked.values())
     #
@@ -263,7 +315,7 @@ def main():
     # permanent_OT_after_3hrs = (2 * base_pay_rate)
     # permanent_public_rate = (2.25 * base_pay_rate)
 
-# THIS CODE LOGIC HAS BEEN TEST AND IS INCORRECT.
+    # THIS CODE LOGIC HAS BEEN TEST AND IS INCORRECT.
 
     # total_pay = 0.0
     # for day, hours in hours_worked.items():
@@ -295,25 +347,66 @@ def main():
     # else:
     #     total_pay += total_hours * base_pay_rate
 
-    st.header("Pay Details:", divider="rainbow")
-    # st.write(f"Hours Worked: {total_hours} hours.")
-    # st.write(f"According to your chosen award and classification level, your total pay is ${total_pay:.2f}.")
 
-    st.header("Next steps", divider="rainbow")
-    st.write("If you have been underpaid, please speak to your employer or refer to the following links for more help.")
-    st.write(f"Australian Fair Work Ombudsman, visit https://www.fairwork.gov.au/ or call 13 13 94 :telephone: , "
+
+    else:
+        st.header("Pay Award Descriptions", divider="rainbow")
+        st.write("Choose the relevant pay award for more information.")
+
+        if st.checkbox("Fast Food Industry Award (MA000003)"):
+            st.write("This award covers employers and employees working in the fast food industry like: "
+             "employees taking orders, including via an app, cooking and selling fast food, "
+             "baristas, delivery drivers, supervisors of these duties and cafes. "
+             "For more info, visit https://www.fairwork.gov.au/employment-conditions/awards/awards-summary/ma000003-summary")
+
+        if st.checkbox("General Retail Industry Award (MA000004)"):
+            st.write("This award covers employers and employees working in the general retail industry like: "
+             "check-out operators, sales assistants, stock hands, shelf stackers, salespersons, store managers,"
+             "tradespersons (butchers, bakers, florists) and travel agencies. "
+             "For more info, visit https://www.fairwork.gov.au/employment-conditions/awards/awards-summary/ma000004-summary")
+
+        if st.checkbox("Hospitality Industry (General) Award (MA000009)"):
+            st.write("This award covers employers and employees working in the hospitality industry like: "
+             "waiters/waitresses, kitchen hands, cooks/chefs, housekeepers, concierge/reception staff"
+             "gaming attendants, security officers, casino staff, catering staff and pub owners. "
+             "For more info, visit https://www.fairwork.gov.au/employment-conditions/awards/awards-summary/ma000009-summary")
+
+    # USEFUL INFORMATION
+
+    if user_type == "Employee":
+        st.header("Next steps", divider="rainbow")
+        st.write("If you have been underpaid, please speak to your employer or refer to the following links for more help.")
+        st.write(f"Australian Fair Work Ombudsman, visit https://www.fairwork.gov.au/ or call 13 13 94 :telephone: , "
              f"open 8am to 5:30pm Monday to Friday, excluding public holidays.")
-    st.write(f":earth_asia: For translation services and language assistance, call 13 14 50.")
+        st.write(f":earth_asia: For translation services and language assistance, call 13 14 50.")
+    else:
+        st.header("Employer Resources", divider="rainbow")
+        st.write('''Please refer to the following links:
+        \n Fair Work Ombudsman Definitions - https://www.fairwork.gov.au/dictionary
+        \n Fair Work Ombudsman Online Learning Centre - https://www.fairwork.gov.au/tools-and-resources/online-learning-centre
+        \n Fair Work Ombudsman Downloaded Templates - https://www.fairwork.gov.au/tools-and-resources/templates
+        \n Need more help? - https://services.fairwork.gov.au/get-help
+        ''')
 
+    # DISCLAIMER SECTION
 
-    # st.markdown(''':red[DISCLAIMER:] This Pay Calculator is an :orange[unofficial] tool.
-    # It's only for information, not exact pay. It might have mistakes.
-    # \n Please use the official Australian Fair Work Ombudsman's guidelines for correct pay rates and rules.
-    # This calculator can't replace professional help. If you rely on it, it's your risk.
-    # \nThe people who made this are not responsible for mistakes. Check its results with official sources.
-    # Get legal or professional help if needed.
-    # \n If you use this Pay Calculator, you know it's :orange[unofficial].
-    # You're responsible for what you do with its results.''')
+    st.header(":red[DISCLAIMER]", divider="rainbow")
+    st.markdown('''This Pay Calculator is an :orange[unofficial] tool.
+    It's only for information, not exact pay. It might have mistakes.
+    \n Please use the official Australian Fair Work Ombudsman's guidelines for correct pay rates and rules.
+    This calculator can't replace professional help. If you rely on it, it's your risk.
+    \nThe people who made this are not responsible for mistakes. Check its results with official sources.
+    Get legal or professional help if needed.
+    \n If you use this Pay Calculator, you know it's :orange[unofficial].
+    You're responsible for what you do with its results.''')
+
+    # CLOSING NOTES
+
+    st.header("Creators note", divider="rainbow")
+    st.markdown('''
+    :rainbow[Created and designed by the Wage Warriors for UTS iLab2 Spring 2023 in association with the Australian Payroll Association.
+    Data obtained from the Fair Work Commission and Fair Work Ombudsman websites.]
+    ''')
 
 if __name__ == "__main__":
     main()
