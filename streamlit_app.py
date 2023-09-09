@@ -289,17 +289,11 @@ def main():
             hours_worked = data["hours_worked"]
             is_public_holiday = data["is_public_holiday"]
 
-            if employment_type == "Full Time" or employment_type == "Part Time":
-                if is_public_holiday:
-                    total_pay += hours_worked * public_holiday_rates
-                else:
-                    total_pay += hours_worked * default_rate
-
-            elif employment_type == "Casual":
-                if is_public_holiday and public_holiday_rates:
-                    total_pay += hours_worked * public_holiday_rates 
-                else:
-                    total_pay += hours_worked * default_rate
+            if is_public_holiday:
+              total_pay += hours_worked * public_holiday_rates
+            else:
+              total_pay += hours_worked * default_rate
+              
         st.write("According to your chosen award and classification level, your total pay is $ {:.2f}.".format(total_pay))
 
 
