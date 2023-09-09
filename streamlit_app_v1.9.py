@@ -2,7 +2,6 @@
 
 import streamlit as st # upgraded to 1.26.0 (released Aug 24th 2023)
 import datetime
-#from datetime import time, timedelta # new timedelta (updated 09/09/2023)
 import pandas as pd
 import requests
 
@@ -12,7 +11,7 @@ translator = Translator()
 
 # Download datasets from FWC website
 
-# Update 09/09/2023 Solved constant reloading through st.cache
+# Update 09/09/2023 Attempt to solve constant reloading through st.cache
 @st.cache_data
 def download_and_process_excel(url, categories, year):
     full_url = f"{url}-{year}.xlsx"
@@ -215,65 +214,67 @@ def main():
 
     # Update 09/09/2023, CHANGE TO FORM LAYOUT TO PREVENT CONSTANT LOADING, WITH SUBMIT BUTTON
 
-        st.header("Your hours", divider="rainbow")
-        # Create a Streamlit form
-        with st.form("hour_entry_form"):
+        st.header("Enter your hours", divider="rainbow")
 
-            days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-            day_data = {day: {"hours_worked": 0.0, "break_taken": False, "is_public_holiday": False} for day in
-                        days_of_week}
+        days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        day_data = {day: {"hours_worked": 0.0, "break_taken": False, "is_public_holiday": False} for day in days_of_week}
 
-            for index, day in enumerate(days_of_week):
-                col1, col2 = st.columns(2)
+        for index, day in enumerate(days_of_week):
+            col1, col2 = st.columns(2)
 
-                with col1:
-                    hours = st.number_input(f"Enter hours worked on {day}:", min_value=0.0, step=0.1)
-                    day_data[day]["hours_worked"] = round(hours, 1)
+            with col1:
+                hours = st.number_input(f"Enter hours worked on {day}:", min_value=0.0, step=0.1)
+                day_data[day]["hours_worked"] = round(hours, 1)
 
-                with col2:
-                    day_data[day]["break_taken"] = st.checkbox(f"No break on {day}")
-                    day_data[day]["is_public_holiday"] = st.checkbox(f"Public holiday on {day}")
+            with col2:
+                day_data[day]["break_taken"] = st.toggle(f"No break on {day}")
+                day_data[day]["is_public_holiday"] = st.toggle(f"Public holiday on {day}")
 
-                    if index < len(days_of_week) - 1:
-                        st.markdown("---")
+                if index < len(days_of_week) - 1:
+                    st.markdown("---")
 
-            submitted = st.form_submit_button("Submit")
+        st.subheader("Summary")
+        hours_df = pd.DataFrame(day_data).T
 
-        # Check if the form was submitted
-        if submitted:
-            st.subheader("Summary")
-            hours_df = pd.DataFrame(day_data).T
+        column_mapping = {
+        "hours_worked": "Hours Worked",
+        "break_taken": "Was a break taken?",
+        "is_public_holiday": "Was it a public holiday?"
+        }
+        boolean_mapping = {True: "Yes", False: "No"}
+        columns_to_map = ["break_taken", "is_public_holiday"]
 
-            column_mapping = {
-                "hours_worked": "Hours Worked",
-                "break_taken": "Was a break taken?",
-                "is_public_holiday": "Was it a public holiday?"
-            }
-            boolean_mapping = {True: "Yes", False: "No"}
-            columns_to_map = ["break_taken", "is_public_holiday"]
+        hours_df[columns_to_map] = hours_df[columns_to_map].applymap(lambda x: boolean_mapping.get(x, x))
+        hours_df["hours_worked"] = hours_df["hours_worked"].apply(lambda x: round(x, 1))
 
-            hours_df[columns_to_map] = hours_df[columns_to_map].applymap(lambda x: boolean_mapping.get(x, x))
-            hours_df["hours_worked"] = hours_df["hours_worked"].apply(lambda x: round(x, 1))
+        styled_df = hours_df.rename(columns=column_mapping).style.set_table_styles([{
+            'selector': 'table',
+            'props': [('user-select', 'none')]
+        }]).set_properties(**{'text-align': 'center'})
+        st.table(styled_df)
 
-            styled_df = hours_df.rename(columns=column_mapping).style.set_table_styles([{
-                'selector': 'table',
-                'props': [('user-select', 'none')]
-            }]).set_properties(**{'text-align': 'center'})
-            st.table(styled_df)
+        total_hours_worked = sum([day["hours_worked"] for day in day_data.values()])
+        if any(day["break_taken"] for day in day_data.values()):
+            total_hours_worked -= 0.5  # 30 minutes for lunch usually
 
-            total_hours_worked = sum([day["hours_worked"] for day in day_data.values()])
-            if any(day["break_taken"] for day in day_data.values()):
-                total_hours_worked -= 0.5  # 30 minutes for lunch usually
+        st.subheader(f"Total Hours Worked: {total_hours_worked:.2f} hours")
 
-            st.subheader(f"Total Hours Worked: {total_hours_worked:.2f} hours")
+    # START OF THE CALCULATION MODULE
 
-        # START OF THE CALCULATION MODULE
-
-        st.header("This is your pay", divider="rainbow")
+        st.header("Pay Details", divider="rainbow")
 
 
 
-        # END OF CALCULATOR MODULE
+
+
+
+
+
+
+
+
+
+    # END OF CALCULATOR MODULE
 
     else:
         st.header("Pay Award Descriptions", divider="rainbow")
@@ -303,7 +304,7 @@ def main():
     # USEFUL INFORMATION
 
     if user_type == "Employee":
-        st.header("Your next steps", divider="rainbow")
+        st.header("Next steps", divider="rainbow")
         st.write("If you have been underpaid, please speak to your employer or refer to the following links for more help.")
         st.write(f"Australian Fair Work Ombudsman, visit https://www.fairwork.gov.au/ or call 13 13 94 :telephone: , "
              f"open 8am to 5:30pm Monday to Friday, excluding public holidays.")
