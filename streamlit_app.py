@@ -266,15 +266,7 @@ def main():
 
         # START OF THE CALCULATION MODULE
         st.header("This is your pay", divider="rainbow")
-
-        # Calculate total pay based on hours worked
-
-        # Copy-pasted data dictionary from above
-            # clauseDescription aka Category
-            # penaltyDescription aka Eligible Entitlements
-            # rate aka Wage Multipliers
-            # Penalty Amount aka penaltyCalculatedValue
-
+        
         # Extract public holiday rates from the penalty dataset
         public_holiday_rates = filtered_df_penalty[
             (filtered_df_penalty["penaltyDescription"].str.contains("public holiday", case=False)) &
@@ -348,6 +340,12 @@ def main():
         #              f"({saturday_rate} x Hours Worked for Saturday) + "
         #              f"({sunday_rate} x Hours Worked for Sunday) + "
         #              f"({public_holiday_rates} x Hours Worked for Public Holidays)")
+            if is_public_holiday:
+              total_pay += hours_worked * public_holiday_rates
+            else:
+              total_pay += hours_worked * default_rate
+              
+        st.write("According to your chosen award and classification level, your total pay is $ {:.2f}.".format(total_pay))
 
         # END OF CALCULATOR MODULE
 
