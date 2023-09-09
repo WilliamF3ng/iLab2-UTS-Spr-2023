@@ -182,19 +182,6 @@ def main():
 
             st.header("Your pay rates", divider="rainbow")
 
-            # Store the user selections in separate lists - IDEA TO GIVE A USER SUMMARY, BUT NOT WORKING YET
-            # user_selected_type = []
-            # user_selected_award = []
-            # user_selected_employment = []
-            # user_selected_employment_level = []
-            #
-            # user_selected_type = ", ".join(user_type)
-            #
-            # st.subheader("What you've told us")
-            #
-            # st.write("User Type:", ", ".join(user_selected_type))
-            # st.write("Employment Types:", user_selected_employment_level)
-
             st.data_editor(selected_data_class,
                            column_config={
                                "baseRate": "Base Rate",
@@ -289,7 +276,6 @@ def main():
             (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
 
         total_pay = 0.0
-        #total_hours_worked = 0.0  # Initialize total hours worked to 0
         days_with_breaks = []
 
         for day, data in day_data.items():
@@ -340,12 +326,6 @@ def main():
         #              f"({saturday_rate} x Hours Worked for Saturday) + "
         #              f"({sunday_rate} x Hours Worked for Sunday) + "
         #              f"({public_holiday_rates} x Hours Worked for Public Holidays)")
-            if is_public_holiday:
-              total_pay += hours_worked * public_holiday_rates
-            else:
-              total_pay += hours_worked * default_rate
-              
-        st.write("According to your chosen award and classification level, your total pay is $ {:.2f}.".format(total_pay))
 
         # END OF CALCULATOR MODULE
 
