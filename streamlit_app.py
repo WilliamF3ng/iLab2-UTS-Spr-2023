@@ -6,6 +6,9 @@ import datetime
 import pandas as pd
 import requests
 
+#from streamlit_lottie import st_lottie
+from streamlit_extras.stoggle import stoggle
+
 # Translation feature
 from googletrans import Translator
 translator = Translator()
@@ -39,7 +42,7 @@ def main():
 
     # Supported languages are: :flag-cn: :flag-in: have all countries but which country is for Arabic? the Arab league flag?
     translate_lang = st.selectbox(" :globe_with_meridians: "
-                                  "Currently supporting 10 languages (more coming soon!). Click here to translate to: ",
+                                  "Currently supporting 10 languages. Choose your language: ",
                                   ["English", "简体中文", "हिंदी", "العربية", "Bahasa Indonesia",
                                    "नेपाली", "Português", "Español", "ภาษาไทย","اردو " , "Tiếng Việt"])
     # Default language English
@@ -231,7 +234,7 @@ def main():
                     day_data[day]["hours_worked"] = round(hours, 1)
 
                 with col2:
-                    day_data[day]["break_taken"] = st.checkbox(f"No break on {day}")
+                    day_data[day]["break_taken"] = st.checkbox(f"Break taken on {day}")
                     day_data[day]["is_public_holiday"] = st.checkbox(f"Public holiday on {day}")
 
                     if index < len(days_of_week) - 1:
@@ -261,17 +264,90 @@ def main():
             }]).set_properties(**{'text-align': 'center'})
             st.table(styled_df)
 
-            total_hours_worked = sum([day["hours_worked"] for day in day_data.values()])
-            if any(day["break_taken"] for day in day_data.values()):
-                total_hours_worked -= 0.5  # 30 minutes for lunch usually
-
-            st.subheader(f"Total Hours Worked: {total_hours_worked:.2f} hours")
-
         # START OF THE CALCULATION MODULE
-
         st.header("This is your pay", divider="rainbow")
 
+        # Calculate total pay based on hours worked
 
+        # Copy-pasted data dictionary from above
+            # clauseDescription aka Category
+            # penaltyDescription aka Eligible Entitlements
+            # rate aka Wage Multipliers
+            # Penalty Amount aka penaltyCalculatedValue
+
+        # Extract public holiday rates from the penalty dataset
+        public_holiday_rates = filtered_df_penalty[
+            (filtered_df_penalty["penaltyDescription"].str.contains("public holiday", case=False)) &
+            (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
+
+        # Define the default rates (non-public holiday rates)
+        default_rate = filtered_df_penalty[
+            (filtered_df_penalty["penaltyDescription"].str.contains("ordinary hours", case=False)) &
+            (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
+
+        # Weekend penalty rates
+        saturday_rate = filtered_df_penalty[
+            (filtered_df_penalty["clauseDescription"].str.contains("ordinary and penalty rates", case=False))&
+            (filtered_df_penalty["penaltyDescription"].str.contains("saturday", case=False))&
+            (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
+
+        sunday_rate = filtered_df_penalty[
+            (filtered_df_penalty["clauseDescription"].str.contains("ordinary and penalty rates", case=False))&
+            (filtered_df_penalty["penaltyDescription"].str.contains("sunday", case=False))&
+            (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
+
+        total_pay = 0.0
+        #total_hours_worked = 0.0  # Initialize total hours worked to 0
+        days_with_breaks = []
+
+        for day, data in day_data.items():
+            hours_worked = data["hours_worked"]
+            is_public_holiday = data["is_public_holiday"]
+            break_taken = data["break_taken"]  # Add break_taken information from the data
+
+            if break_taken:
+                hours_worked -= 0.5  # Deduct 0.5 hours if a break was taken
+                days_with_breaks.append(day)
+
+            if is_public_holiday:
+                total_pay += hours_worked * public_holiday_rates
+            elif day == "Saturday":
+                total_pay += hours_worked * saturday_rate
+            elif day == "Sunday":
+                total_pay += hours_worked * sunday_rate
+            else:
+                total_pay += hours_worked * default_rate
+
+        # Calculate the total hours worked after considering breaks
+        total_hours_worked = sum([day["hours_worked"] for day in day_data.values()])
+        if any(day["break_taken"] for day in day_data.values()):
+           total_hours_worked -= 0.5  # 30 minutes for lunch usually
+
+        st.subheader(f"Total Hours Worked: {total_hours_worked:.1f} hours")
+
+        # Display a message for days with breaks
+        if days_with_breaks:
+            st.write(f"On {', '.join(days_with_breaks)}, you took a break.")
+
+        st.write(
+            "Your total pay is $ {:.2f}. If you think this is wrong, please look at the Next Steps below".format(total_pay))
+        stoggle(
+            "Show calculations",
+            """Total Pay = (Ordinary Rate x Hours Worked) + (Penalty Rates x Hours Worked for Sat/Sun/Public Holiday) + (Overtime rates x Hours overtime)""")
+
+        # Add a "Show Calculation" dropdown
+        # show_calculation = st.selectbox("Show Calculation", ["Simplified Equation", "Detailed Calculation"])
+        #
+        # if show_calculation == "Simplified Equation":
+        #     st.subheader("Simplified Calculation:")
+        #     st.write(
+        #         f"Total Pay = (Ordinary Rate x Hours Worked) + (Penalty Rates x Hours Worked for Sat/Sun/Public Holiday)")
+        # else:
+        #     st.subheader("Detailed Calculation:")
+        #     st.write(f"Total Pay = ({default_rate} x Hours Worked for Mon-Fri) + "
+        #              f"({saturday_rate} x Hours Worked for Saturday) + "
+        #              f"({sunday_rate} x Hours Worked for Sunday) + "
+        #              f"({public_holiday_rates} x Hours Worked for Public Holidays)")
 
         # END OF CALCULATOR MODULE
 
