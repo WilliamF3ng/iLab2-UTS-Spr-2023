@@ -271,6 +271,36 @@ def main():
 
         st.header("This is your pay", divider="rainbow")
 
+        # Shalimar's trial code
+        # Calculate total pay based on hours worked
+        # Extract public holiday rates from the penalty dataset
+        public_holiday_rates = filtered_df_penalty[
+            (filtered_df_penalty["penaltyDescription"].str.contains("public holiday", case=False)) &
+            (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
+
+        # Define the default rates (non-public holiday rates)
+        default_rate = filtered_df_penalty[
+            (filtered_df_penalty["penaltyDescription"].str.contains("Ordinary hours", case=False)) &
+            (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
+
+        total_pay = 0.0
+
+        for day, data in day_data.items():
+            hours_worked = data["hours_worked"]
+            is_public_holiday = data["is_public_holiday"]
+
+            if employment_type == "Full Time" or employment_type == "Part Time":
+                if is_public_holiday:
+                    total_pay += hours_worked * public_holiday_rates
+                else:
+                    total_pay += hours_worked * default_rate
+
+            elif employment_type == "Casual":
+                if is_public_holiday and public_holiday_rates:
+                    total_pay += hours_worked * public_holiday_rates 
+                else:
+                    total_pay += hours_worked * default_rate
+        st.write("According to your chosen award and classification level, your total pay is $ {:.2f}.".format(total_pay))
 
 
         # END OF CALCULATOR MODULE
