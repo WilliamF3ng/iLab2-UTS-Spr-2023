@@ -351,6 +351,7 @@ def main():
 
         # END OF CALCULATOR MODULE
 
+
     else:
         st.header("Pay Award Descriptions", divider="rainbow")
         employer_selected = st.radio("Choose the relevant pay award for more information.",
