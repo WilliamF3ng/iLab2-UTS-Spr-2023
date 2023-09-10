@@ -1,6 +1,6 @@
 # INSTALLING REQUIRED LIBRARIES
 
-import streamlit as st # upgraded to 1.26.0 (released Aug 24th 2023)
+import streamlit as st
 import datetime
 #from datetime import time, timedelta # new timedelta (updated 09/09/2023)
 import pandas as pd
@@ -15,7 +15,6 @@ translator = Translator()
 
 # Download datasets from FWC website
 
-# Update 09/09/2023 Solved constant reloading through st.cache
 @st.cache_data
 def download_and_process_excel(url, categories, year):
     full_url = f"{url}-{year}.xlsx"
@@ -39,8 +38,6 @@ def main():
 
     # Based on top international student countries supported languages are:
     # English, Chinese, Hindi, Arabic, Indonesian, Nepali, Portuguese, Spanish, Thai, Urdu, Vietnamese.
-
-    # Supported languages are: :flag-cn: :flag-in: have all countries but which country is for Arabic? the Arab league flag?
     translate_lang = st.selectbox(" :globe_with_meridians: "
                                   "Currently supporting 10 languages. Choose your language: ",
                                   ["English", "简体中文", "हिंदी", "العربية", "Bahasa Indonesia",
@@ -122,7 +119,7 @@ def main():
                                                  "Less than 38 hours per work, but hours are regular",
                                                  "No agreed pattern of work"))
 
-            # What if you filter the dataset by parentClassification and then ask the user to select their classification
+            # Filter the dataset by parentClassification and then ask the user to select their classification
             filtered_df = filtered_df[(filtered_df["employeeRateTypeCode"] == "AD") | (filtered_df["employeeRateTypeCode"] == "JN")]
             filtered_df_penalty = filtered_df_penalty[(filtered_df_penalty["employeeRateTypeCode"] == "AD") | (filtered_df_penalty["employeeRateTypeCode"] == "JN")]
 
@@ -174,7 +171,7 @@ def main():
             # DISPLAY THE PAY RATES BELOW
 
             # Select only the relevant columns
-            selected_col_classification = ["baseRate", "baseRateType"] # add penalty rate calculations to this table too
+            selected_col_classification = ["baseRate", "baseRateType"]
             selected_data_class = filtered_df[selected_col_classification]
 
             selected_col_penalty = ["clauseDescription","penaltyDescription","rate","penaltyCalculatedValue"]
@@ -203,12 +200,9 @@ def main():
 
     # START OF THE HOURS INPUT MODULE
 
-    # Update 09/09/2023, CHANGE TO FORM LAYOUT TO PREVENT CONSTANT LOADING, WITH SUBMIT BUTTON
-
         st.header("Your hours", divider="rainbow")
-        # Create a Streamlit form
-        with st.form("hour_entry_form"):
 
+        with st.form("hour_entry_form"):
             days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
             day_data = {day: {"hours_worked": 0.0, "break_taken": False, "is_public_holiday": False} for day in
                         days_of_week}
@@ -227,108 +221,108 @@ def main():
                     if index < len(days_of_week) - 1:
                         st.markdown("---")
 
-            submitted = st.form_submit_button("Submit")
+            submitted = st.form_submit_button("Calculate", use_container_width=True)
+        #reset_button = st.button("Restart")  # Add a "Clear All" button
 
-        # Check if the form was submitted
+        # Check if the "Clear All" button is clicked
+        # if reset_button:
+        #     # Reset all form fields and data
+        #     day_data = {day: {"hours_worked": 0.0, "break_taken": False, "is_public_holiday": False} for day in
+        #                 days_of_week}
+
+            # Check if the form was submitted
         if submitted:
-            st.subheader("Summary")
-            hours_df = pd.DataFrame(day_data).T
+            st.success(translator.translate("We've done the maths for you.", dest=target_lang).text, icon="✅")
 
-            column_mapping = {
-                "hours_worked": "Hours Worked",
-                "break_taken": "Was a break taken?",
-                "is_public_holiday": "Was it a public holiday?"
-            }
-            boolean_mapping = {True: "Yes", False: "No"}
-            columns_to_map = ["break_taken", "is_public_holiday"]
+            # START OF THE CALCULATION MODULE
+            st.header("This is your pay", divider="rainbow")
 
-            hours_df[columns_to_map] = hours_df[columns_to_map].applymap(lambda x: boolean_mapping.get(x, x))
-            hours_df["hours_worked"] = hours_df["hours_worked"].apply(lambda x: round(x, 1))
+            public_holiday_rates = filtered_df_penalty[
+                (filtered_df_penalty["penaltyDescription"].str.contains("public holiday", case=False)) &
+                (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
 
-            styled_df = hours_df.rename(columns=column_mapping).style.set_table_styles([{
-                'selector': 'table',
-                'props': [('user-select', 'none')]
-            }]).set_properties(**{'text-align': 'center'})
-            st.table(styled_df)
+            # Define the default rates (non-public holiday rates)
+            ordinary_rate = filtered_df_penalty[
+                (filtered_df_penalty["penaltyDescription"].str.contains("ordinary hours", case=False)) &
+                (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
 
-        # START OF THE CALCULATION MODULE
-        st.header("This is your pay", divider="rainbow")
-        
-        # Extract public holiday rates from the penalty dataset
-        public_holiday_rates = filtered_df_penalty[
-            (filtered_df_penalty["penaltyDescription"].str.contains("public holiday", case=False)) &
-            (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
+            # Weekend penalty rates
+            saturday_rate = filtered_df_penalty[
+                (filtered_df_penalty["clauseDescription"].str.contains("ordinary and penalty rates", case=False)) &
+                (filtered_df_penalty["penaltyDescription"].str.contains("saturday", case=False)) &
+                (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
 
-        # Define the default rates (non-public holiday rates)
-        default_rate = filtered_df_penalty[
-            (filtered_df_penalty["penaltyDescription"].str.contains("ordinary hours", case=False)) &
-            (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
+            sunday_rate = filtered_df_penalty[
+                (filtered_df_penalty["clauseDescription"].str.contains("ordinary and penalty rates", case=False)) &
+                (filtered_df_penalty["penaltyDescription"].str.contains("sunday", case=False)) &
+                (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
 
-        # Weekend penalty rates
-        saturday_rate = filtered_df_penalty[
-            (filtered_df_penalty["clauseDescription"].str.contains("ordinary and penalty rates", case=False))&
-            (filtered_df_penalty["penaltyDescription"].str.contains("saturday", case=False))&
-            (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
+            total_pay = 0.0
+            days_with_breaks = []
 
-        sunday_rate = filtered_df_penalty[
-            (filtered_df_penalty["clauseDescription"].str.contains("ordinary and penalty rates", case=False))&
-            (filtered_df_penalty["penaltyDescription"].str.contains("sunday", case=False))&
-            (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
+            # Initialize lists to store data for the table
+            table_data = {"Day": [], "Hours Worked": [], "Break Taken": [], "Rate Description": [], "Rate": [],
+                          "Pay": []}
 
-        total_pay = 0.0
-        days_with_breaks = []
+            for day, data in day_data.items():
+                hours_worked = data["hours_worked"]
+                is_public_holiday = data["is_public_holiday"]
+                break_taken = data["break_taken"]  # Add break_taken information from the data
 
-        for day, data in day_data.items():
-            hours_worked = data["hours_worked"]
-            is_public_holiday = data["is_public_holiday"]
-            break_taken = data["break_taken"]  # Add break_taken information from the data
+                if break_taken:
+                    hours_worked -= 0.5  # Deduct 0.5 hours if a break was taken
+                    days_with_breaks.append(day)
 
-            if break_taken:
-                hours_worked -= 0.5  # Deduct 0.5 hours if a break was taken
-                days_with_breaks.append(day)
+                if is_public_holiday:
+                    rate = public_holiday_rates
+                    rate_description = "Public Holiday Rate"
+                elif day == "Saturday":
+                    rate = saturday_rate
+                    rate_description = "Saturday Rate"
+                elif day == "Sunday":
+                    rate = sunday_rate
+                    rate_description = "Sunday Rate"
+                else:
+                    rate = ordinary_rate
+                    rate_description = "Ordinary Rate"
 
-            if is_public_holiday:
-                total_pay += hours_worked * public_holiday_rates
-            elif day == "Saturday":
-                total_pay += hours_worked * saturday_rate
-            elif day == "Sunday":
-                total_pay += hours_worked * sunday_rate
-            else:
-                total_pay += hours_worked * default_rate
+                # Calculate pay for this day
+                day_pay = hours_worked * rate
 
-        # Calculate the total hours worked after considering breaks
-        total_hours_worked = sum([day["hours_worked"] for day in day_data.values()])
-        if any(day["break_taken"] for day in day_data.values()):
-           total_hours_worked -= 0.5  # 30 minutes for lunch usually
+                # Append data to the table_data dictionary
+                table_data["Day"].append(day)
+                table_data["Hours Worked"].append(f"{hours_worked:.1f} hours")
+                table_data["Break Taken"].append("Yes" if break_taken else "No")
+                table_data["Rate Description"].append(rate_description)
+                table_data["Rate"].append(f"${rate:.2f}")
+                table_data["Pay"].append(f"${day_pay:.2f}")
 
-        st.subheader(f"Total Hours Worked: {total_hours_worked:.1f} hours")
+                # Accumulate the total pay
+                total_pay += day_pay
 
-        # Display a message for days with breaks
-        if days_with_breaks:
-            st.write(f"On {', '.join(days_with_breaks)}, you took a break.")
+            # Calculate the total hours worked after considering breaks
+            total_hours_worked = sum([data["hours_worked"] for data in day_data.values()])
+            if any(data["break_taken"] for data in day_data.values()):
+                total_hours_worked -= 0.5  # Deduct 30 minutes for lunch usually
 
-        st.write(
-            "Your total pay is $ {:.2f}. If you think this is wrong, please look at the Next Steps below".format(total_pay))
-        stoggle(
-            "Show calculations",
-            """Total Pay = (Ordinary Rate x Hours Worked) + (Penalty Rates x Hours Worked for Sat/Sun/Public Holiday) + (Overtime rates x Hours overtime)""")
+            st.subheader(f"Total hours worked: {total_hours_worked:.1f} hours!")
 
-        # Add a "Show Calculation" dropdown
-        # show_calculation = st.selectbox("Show Calculation", ["Simplified Equation", "Detailed Calculation"])
-        #
-        # if show_calculation == "Simplified Equation":
-        #     st.subheader("Simplified Calculation:")
-        #     st.write(
-        #         f"Total Pay = (Ordinary Rate x Hours Worked) + (Penalty Rates x Hours Worked for Sat/Sun/Public Holiday)")
-        # else:
-        #     st.subheader("Detailed Calculation:")
-        #     st.write(f"Total Pay = ({default_rate} x Hours Worked for Mon-Fri) + "
-        #              f"({saturday_rate} x Hours Worked for Saturday) + "
-        #              f"({sunday_rate} x Hours Worked for Sunday) + "
-        #              f"({public_holiday_rates} x Hours Worked for Public Holidays)")
+            # Display a message for days with breaks
+            if days_with_breaks:
+                st.write(f"On {', '.join(days_with_breaks)}, you took a break.")
+
+            st.write(
+                "Your total pay is $ {:.2f}. If you think this is wrong, please look at the Next Steps below.".format(
+                    total_pay))
+
+            # Breakdown table
+            breakdown_df = pd.DataFrame(table_data)
+            with st.expander("Show hours calculation"):
+                styled_breakdown_df = st.data_editor(
+                    breakdown_df,
+                    hide_index=True)
 
         # END OF CALCULATOR MODULE
-
 
     else:
         st.header("Pay Award Descriptions", divider="rainbow")
@@ -357,24 +351,89 @@ def main():
 
     # USEFUL INFORMATION
 
+    # 10/09/2023 added more helpful info and links. Simplified language.
+
     if user_type == "Employee":
         st.header("Your next steps", divider="rainbow")
-        st.write("If you have been underpaid, please speak to your employer or refer to the following links for more help.")
-        st.write(f"Australian Fair Work Ombudsman, visit https://www.fairwork.gov.au/ or call 13 13 94 :telephone: , "
-             f"open 8am to 5:30pm Monday to Friday, excluding public holidays.")
+        st.write(translator.translate("Don't worry, this tool will try to help you. "
+                                      "Please select which scenario best fits your situation:",dest=target_lang).text)
+
+        # Tried to apply different style to the title and text body but affecting entire app due to same CSS Class
+        # expander_style = """
+        # <style>
+        #     .css-16idsys.e1nzilvr5 p {
+        #         font-size: 32px;
+        #         color: red;
+        #     }
+        #     .css-16idsys.e1nzilvr5 {
+        #         font-family: bariol;
+        #         font-size: 20px;
+        #     }
+        # </style>
+        # """
+
+        with st.expander(translator.translate("I have been underpaid!", dest=target_lang).text):
+            #st.markdown(expander_style, unsafe_allow_html=True)
+
+            st.write(translator.translate('''1. Double check all your details are correct, pay award, employment type, job description and classification.
+            \n 2. Export the calculations and get ready to speak to your boss. Bring any information you have like past payslips, 
+            know how much you should have been paid, how much you're owed and clear any misunderstandings about pay calculations.
+            \n 3. Arrange a time to talk to your boss and show them what you've found. Sometimes recommended to bring a friend for support.
+            \n 4. Discuss the problem with your boss. Stay calm and listen. If you're boss is unsure, refer them to the [Australian Fair Work Ombudsman](https://www.fairwork.gov.au/) website.
+            \n 5. Work out the next steps together with your boss and write down what was agreed to. Having documentation is important. Agree when you expect the money to be back paid by. 
+            \n 6. Follow up with the boss if you haven't been back paid yet.''', dest=target_lang).text)
+
+
+        with st.expander(translator.translate("I'm on a student, temporary or working rights visa holder and I'm scared of my visa being cancelled!", dest=target_lang).text):
+            st.write(translator.translate('''Your boss :red[DOES NOT] have any power to cancel your Visa. Ignore any threats or bullying!
+            Only the Australian Department of Home Affairs can cancel visas, not your boss. 
+            \n Did you know that the Fair Work Ombudsman supports visa holders even if you've already breached your work-related visa conditions? 
+            \n This is called the [Assurance Protocol](https://www.fairwork.gov.au/find-help-for/visa-holders-migrants) which protects you against visa cancellations.
+            \n Remember only Home Affairs can grant, refuse or cancel visas. Not your boss. 
+            ''', dest=target_lang).text)
+
+        with st.expander(translator.translate("After speaking to my boss, I have been dismissed or threatened with dismissal!", dest=target_lang).text):
+            st.write(translator.translate('''This is illegal. There are Australian laws in place to protect people from 
+            being dismissed when discussing a problem at work or asking for the correct pay. 
+            ''', dest=target_lang).text)
+
+        st.write(translator.translate('''Sometimes things don't resolve peacefully, if you need more support.
+                                      \n Reach out to the Australian Fair Work Ombudsman:
+                                      \n - Visit https://www.fairwork.gov.au/
+                                      \n - Call 13 13 94
+                                      \n Open 8am to 5:30pm Monday to Friday, excluding public holidays.''', dest=target_lang).text)
+
         st.write(f":earth_asia: For translation services and language assistance, call 13 14 50.")
+
     else:
         st.header("Employer Resources", divider="rainbow")
         st.write('''Please refer to the following links:
-        \n Fair Work Ombudsman Definitions - https://www.fairwork.gov.au/dictionary
-        \n Fair Work Ombudsman Online Learning Centre - https://www.fairwork.gov.au/tools-and-resources/online-learning-centre
-        \n Fair Work Ombudsman Downloaded Templates - https://www.fairwork.gov.au/tools-and-resources/templates
-        \n Need more help? - https://services.fairwork.gov.au/get-help
+        \n - [Fair Work Ombudsman Definitions](https://www.fairwork.gov.au/dictionary)
+        \n - [Fair Work Ombudsman Online Learning Centre](https://www.fairwork.gov.au/tools-and-resources/online-learning-centre)
+        \n - [Fair Work Ombudsman Downloaded Templates](https://www.fairwork.gov.au/tools-and-resources/templates)
+        \n - [Need more help? Click here](https://services.fairwork.gov.au/get-help)
         ''')
+
+    # FAQ SECTION
+
+    # st.header("FAQ", divider="rainbow")
+    #
+    # with st.expander("Q1. How accurate is this tool?"):
+    #     st.write('''This tool retrieves the data from the Australia Fair Work Commission website using a predetermined link.
+    # It uses the user's current year to get the latest information.''')
+    #
+    # with st.expander("<placeholder Q>"):
+    #     st.write('''<placeholder>''')
+    # with st.expander("<placeholder Q>"):
+    #     st.write('''<placeholder>''')
+    # with st.expander("<placeholder Q>"):
+    #     st.write('''<placeholder>''')
+    # with st.expander("<placeholder Q>"):
+    #     st.write('''<placeholder>''')
 
     # DISCLAIMER SECTION
 
-    st.header(":red[DISCLAIMER]", divider="rainbow")
+    st.header(":red[Disclaimer]", divider="rainbow")
     st.markdown('''This Pay Calculator is an :orange[unofficial] tool.
     It's only for information, not exact pay. It might have mistakes.
     \n Please use the official Australian Fair Work Ombudsman's guidelines for correct pay rates and rules.
