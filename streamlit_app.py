@@ -140,6 +140,9 @@ def main():
             unique_classification = filtered_df["classification"].unique()
             user_classification = st.selectbox(translator.translate("Choose your classification: ",
                                                                     dest=target_lang).text, unique_classification)
+            st.caption("Don't know your classification level? :blue[Click here!]")
+
+
 
             filtered_df = filtered_df[filtered_df["classification"] == user_classification]
             filtered_df_penalty = filtered_df_penalty[filtered_df_penalty["classification"] == user_classification]
@@ -165,8 +168,10 @@ def main():
                     ~filtered_df_penalty["clauseDescription"].str.contains("casual", case=False)]
 
             # Making some large assumptions like excluding baking employees in 004 due to odd start hours
-            filtered_df_penalty = filtered_df_penalty[~filtered_df_penalty["penaltyDescription"].
-            str.contains("Early morning shifts", case=False)]
+            #filtered_df_penalty = filtered_df_penalty[~filtered_df_penalty["penaltyDescription"].str.contains("Early morning shifts", case=False)]
+            # Getting a Python error = TypeError: bad operand type for unary ~: 'float'. Rewritten this code.
+            filtered_df_penalty = filtered_df_penalty[~(filtered_df_penalty["penaltyDescription"]
+                                                        .str.contains("Early morning shifts", case=False) == True)]
 
             # DISPLAY THE PAY RATES BELOW
 
@@ -174,7 +179,7 @@ def main():
             selected_col_classification = ["baseRate", "baseRateType"]
             selected_data_class = filtered_df[selected_col_classification]
 
-            selected_col_penalty = ["clauseDescription","penaltyDescription","rate","penaltyCalculatedValue"]
+            selected_col_penalty = ["clauseDescription", "penaltyDescription", "rate", "penaltyCalculatedValue"]
             selected_data_penalty = filtered_df_penalty[selected_col_penalty]
 
             st.header("Your pay rates", divider="rainbow")
@@ -211,7 +216,8 @@ def main():
                 col1, col2 = st.columns(2)
 
                 with col1:
-                    hours = st.number_input(f"Enter hours worked on {day}:", min_value=0.0, step=0.1)
+                    # Added minimum value 0.0 and maximum value 24.0 hrs per day.
+                    hours = st.number_input(f"Enter hours worked on {day}:", min_value=0.0, max_value=24.0, step=0.1)
                     day_data[day]["hours_worked"] = round(hours, 1)
 
                 with col2:
@@ -220,6 +226,11 @@ def main():
 
                     if index < len(days_of_week) - 1:
                         st.markdown("---")
+
+            # Superannuation slider
+            # Current govtrate is 11% as of 2023. Will increase to 12% in 2025 and onward until 2028.
+            # Range is good until 2027. According to ATO (extracted 14th Sept 2023)
+            st.slider("Superannuation rate", min_value=11.0, max_value=12.0, value=11.0, step=0.5, format="%f%%")
 
             submitted = st.form_submit_button("Calculate", use_container_width=True)
         #reset_button = st.button("Restart")  # Add a "Clear All" button
@@ -305,15 +316,20 @@ def main():
             if any(data["break_taken"] for data in day_data.values()):
                 total_hours_worked -= 0.5  # Deduct 30 minutes for lunch usually
 
-            st.subheader(f"Total hours worked: {total_hours_worked:.1f} hours!")
+            # Revised how messages are shown
+            # st.write(f"You have worked {total_hours_worked:.1f} hours!")
 
             # Display a message for days with breaks
             if days_with_breaks:
                 st.write(f"On {', '.join(days_with_breaks)}, you took a break.")
 
-            st.write(
-                "Your total pay is $ {:.2f}. If you think this is wrong, please look at the Next Steps below.".format(
-                    total_pay))
+            # Revised how messages are shown
+            # st.write(
+            #     "Your total pay is $ {:.2f}. If you think this is :red[wrong], please look at the Next Steps below.".format(
+            #         total_pay))
+
+            st.write(f"You have worked {total_hours_worked:.1f} hours! Your total pay is $ {total_pay:.2f}. "
+                     f"If you think this is :red[wrong], please look at the Next Steps below.")
 
             # Breakdown table
             breakdown_df = pd.DataFrame(table_data)
@@ -321,6 +337,7 @@ def main():
                 styled_breakdown_df = st.data_editor(
                     breakdown_df,
                     hide_index=True)
+
 
         # END OF CALCULATOR MODULE
 
