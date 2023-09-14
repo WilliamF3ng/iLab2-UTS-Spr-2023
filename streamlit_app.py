@@ -230,7 +230,7 @@ def main():
             # Superannuation slider
             # Current govtrate is 11% as of 2023. Will increase to 12% in 2025 and onward until 2028.
             # Range is good until 2027. According to ATO (extracted 14th Sept 2023)
-            st.slider("Superannuation rate", min_value=11.0, max_value=12.0, value=11.0, step=0.5, format="%f%%")
+            superannuation_rate = st.slider("Superannuation rate", min_value=11.0, max_value=12.0, value=11.0, step=0.5, format="%f%%")
 
             submitted = st.form_submit_button("Calculate", use_container_width=True)
         #reset_button = st.button("Restart")  # Add a "Clear All" button
@@ -323,13 +323,19 @@ def main():
             if days_with_breaks:
                 st.write(f"On {', '.join(days_with_breaks)}, you took a break.")
 
+            # Calculate superannuation per week using the selected superannuation rate
+            superannuation_per_week = (total_pay * superannuation_rate) / 100
+
             # Revised how messages are shown
             # st.write(
             #     "Your total pay is $ {:.2f}. If you think this is :red[wrong], please look at the Next Steps below.".format(
             #         total_pay))
-
-            st.write(f"You have worked {total_hours_worked:.1f} hours! Your total pay is $ {total_pay:.2f}. "
-                     f"If you think this is :red[wrong], please look at the Next Steps below.")
+            
+            #update 14/09/2023 
+            #Could not put them in a single st.write as they were in different fonts for some reason
+            st.write(f"You have worked {total_hours_worked:.1f} hours! Your total pay is $ {total_pay:.2f}. ")
+            st.write(f"Your superannuation per week is $ {superannuation_per_week:.2f}. ")
+            st.write(f"If you think this is :red[wrong], please look at the Next Steps below.")
 
             # Breakdown table
             breakdown_df = pd.DataFrame(table_data)
