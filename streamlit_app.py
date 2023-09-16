@@ -322,9 +322,25 @@ def main():
             # Display a message for days with breaks
             if days_with_breaks:
                 st.write(f"On {', '.join(days_with_breaks)}, you took a break.")
+            
+            #Superanniuation calculations
+            # Check if the employee is a junior under 18 years old and has worked more than 30 hours a week
+            is_under_18 = user_classification.lower().strip() in [
+                                "under 16 years",
+                                "16 years",
+                                "17 years",
+                                "15 years of age and under",
+                                "16 years of age",
+                                "17 years of age",
+                                "16 years of age and under"
+                                 ]
+            if is_under_18 and total_hours_worked < 30:
+                superannuation_per_week = 0.00
+            else: superannuation_per_week = (total_pay * superannuation_rate) / 100
+
 
             # Calculate superannuation per week using the selected superannuation rate
-            superannuation_per_week = (total_pay * superannuation_rate) / 100
+            #superannuation_per_week = (total_pay * superannuation_rate) / 100
 
             # Revised how messages are shown
             # st.write(
