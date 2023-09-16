@@ -319,7 +319,8 @@ def main():
             # Calculate the total hours worked after considering breaks
             total_hours_worked = sum([data["hours_worked"] for data in day_data.values()])
 
-            # Superanniuation calculations
+
+            # Superannuation calculations
             # Check if the employee is a junior under 18 years old and has worked more than 30 hours a week
             is_under_18 = user_classification.lower().strip() in [
                 "under 16 years",
