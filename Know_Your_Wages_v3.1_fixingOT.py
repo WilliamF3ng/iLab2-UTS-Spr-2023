@@ -1,8 +1,6 @@
 import streamlit as st
-#import bcrypt
+import bcrypt
 import datetime
-from datetime import time
-
 import pandas as pd
 import requests
 from googletrans import Translator
@@ -10,11 +8,6 @@ from googletrans import Translator
 translator = Translator()
 
 # Exact same app code below
-@st.cache_data
-def convert_df(df):
-    return df.to_csv(index=False).encode("utf-8")
-
-
 @st.cache_data
 def download_and_process_excel(url, categories, year):
     full_url = f"{url}-{year}.xlsx"
@@ -235,39 +228,34 @@ def main():
 
         st.header("Your hours", divider="rainbow")
 
-        # Experiment using tabs
+        with st.form("hour_entry_form"):
+            days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+            day_data = {day: {"hours_worked": 0.0, "is_evening_shift": False, "is_overtime": False,
+                              "is_public_holiday": False} for day in
+                        days_of_week}
 
-        standard_hours, clock_hours = st.tabs(["Standard Input", "Clock in/out Input"])
+            for index, day in enumerate(days_of_week):
+                col1, col2 = st.columns(2)
 
-        with standard_hours:
-            with st.form("hour_entry_form"):
-                days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-                day_data = {day: {"hours_worked": 0.0, "is_evening_shift": False, "is_overtime": False,
-                                  "is_public_holiday": False} for day in
-                            days_of_week}
+                with col1:
+                    hours = st.number_input(f"Enter hours worked on {day}, excluding breaks:",
+                                            min_value=0.0, max_value=24.0, step=0.1)
+                    day_data[day]["hours_worked"] = round(hours, 1)
 
-                for index, day in enumerate(days_of_week):
-                    col1, col2 = st.columns(2)
+                with col2:
+                    day_data[day]["is_evening_shift"] = st.checkbox(f"Evening shift on {day}",
+                                                                    help="Tick if your shift started or ended after 6pm")
+                    day_data[day]["is_public_holiday"] = st.checkbox(f"Public holiday on {day}")
 
-                    with col1:
-                        hours = st.number_input(f"Enter hours worked on {day}, excluding breaks:",
-                                                min_value=0.0, max_value=24.0, step=0.1)
-                        day_data[day]["hours_worked"] = round(hours, 1)
+                    if index < len(days_of_week) - 1:
+                        st.markdown("---")
 
-                    with col2:
-                        day_data[day]["is_evening_shift"] = st.checkbox(f"Evening shift on {day}",
-                                                                        help="Tick if your shift started or ended after 6pm")
-                        day_data[day]["is_public_holiday"] = st.checkbox(f"Public holiday on {day}")
+            # Superannuation slider
+            superannuation_rate = st.slider("Superannuation rate", min_value=11.0, max_value=15.0,
+                                            value=11.0, step=0.5,
+                                            format="%f%%")
 
-                        if index < len(days_of_week) - 1:
-                            st.markdown("---")
-
-                # Superannuation slider
-                superannuation_rate = st.slider("Superannuation rate", min_value=11.0, max_value=15.0,
-                                                value=11.0, step=0.5,
-                                                format="%f%%")
-
-                submitted = st.form_submit_button("Calculate", use_container_width=True)
+            submitted = st.form_submit_button("Calculate", use_container_width=True)
 
             # Check if the form was submitted
             if submitted:
@@ -344,57 +332,160 @@ def main():
                     if hours_worked >= 4:
                         days_with_more_4hs.append(day)
 
+                    # if hours_worked > 11 or rolling_total_hours_worked > 38:
+                    #     is_overtime = "Yes"
+
+                    # ORIGINAL CODE - NEED TO SPLIT OVERTIME CALCULATIONS
+                    # For example, if someone worked 5 total hours of overtime.
+                    # The first 3 hours should be paid as overtime_first_x_hrs and the remaining 2 hours as overtime_after_x_hrs.
+
+                    #     if selected_award == "MA000003":
+                    #         if day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]:
+                    #             if hours_worked <= 2:
+                    #                 rate = overtime_first_x_hrs
+                    #                 rate_description = "Overtime First 2 Hours"
+                    #             elif hours_worked > 2:
+                    #                 rate = overtime_after_x_hrs
+                    #                 rate_description = "Overtime After 2 Hours"
+                    #             if is_public_holiday:
+                    #                 rate = overtime_public_holiday
+                    #                 rate_description = "Overtime PH"
+                    #         elif day == "Sunday":
+                    #             if is_public_holiday:
+                    #                 rate = overtime_public_holiday
+                    #                 rate_description = "Overtime PH"
+                    #             else:
+                    #                 rate = overtime_sunday_and_hospo_weekends
+                    #                 rate_description = "Overtime Sunday"
+                    #     elif selected_award == "MA000004":
+                    #         if day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]:
+                    #             if hours_worked <= 3:
+                    #                 rate = overtime_first_x_hrs
+                    #                 rate_description = "Overtime First 3 Hours"
+                    #             elif hours_worked > 3:
+                    #                 rate = overtime_after_x_hrs
+                    #                 rate_description = "Overtime After 3 Hours"
+                    #             if is_public_holiday:
+                    #                 rate = overtime_public_holiday
+                    #                 rate_description = "Overtime PH"
+                    #     elif selected_award == "MA000009":
+                    #         if day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]:
+                    #             if hours_worked <= 2:
+                    #                 rate = overtime_first_x_hrs
+                    #                 rate_description = "Overtime First 2 Hours"
+                    #             elif hours_worked > 2:
+                    #                 rate = overtime_after_x_hrs
+                    #                 rate_description = "Overtime After 2 Hours"
+                    #             if is_public_holiday:
+                    #                 rate = overtime_public_holiday
+                    #                 rate_description = "Overtime PH"
+                    #         elif day in ["Saturday", "Sunday"]:
+                    #             if is_public_holiday:
+                    #                 rate = overtime_public_holiday
+                    #                 rate_description = "Overtime PH"
+                    #             else:
+                    #                 rate = overtime_sunday_and_hospo_weekends
+                    #                 rate_description = "Overtime Sunday"
+                    # else:
+                    #     is_overtime = "No"
+                    #     if selected_award in ["MA000003", "MA000004", "MA000009"]:
+                    #         if is_public_holiday:
+                    #             rate = public_holiday_rates
+                    #             rate_description = "Penalty PH Rate"
+                    #         elif day == "Saturday":
+                    #             rate = saturday_rate
+                    #             rate_description = "Penalty Saturday Rate"
+                    #         elif day == "Sunday":
+                    #             rate = sunday_rate
+                    #             rate_description = "Penalty Sunday Rate"
+                    #         else:
+                    #             rate = ordinary_rate
+                    #             rate_description = "Ordinary Rate"
+                    #
+                    # # Calculate pay for this day
+                    # day_pay = hours_worked * rate
+
+                    overtime_first_x_hrs_hours = 0  # Initialize
+                    overtime_after_x_hrs_hours = 0
+                    rate_first_x_hrs = 0
+                    rate_after_x_hrs = 0
+
                     if hours_worked > 11 or rolling_total_hours_worked > 38:
                         is_overtime = "Yes"
+                        overtime_hours = max(0, hours_worked - 11, rolling_total_hours_worked - 38)  # Calculate total overtime hours
+
+                        # Determine the specific overtime threshold based on the selected award
+                        if selected_award == "MA000003":
+                            overtime_threshold = 2
+                        elif selected_award == "MA000004":
+                            overtime_threshold = 3
+                        elif selected_award == "MA000009":
+                            overtime_threshold = 2
+                        else:
+                            overtime_threshold = 0  # Default to 0 if the award is not recognized
+
+                        # Calculate the hours eligible for overtime_first_x_hrs rate
+                        if overtime_hours > overtime_threshold:
+                            overtime_first_x_hrs_hours = overtime_threshold
+                        else:
+                            overtime_first_x_hrs_hours = overtime_threshold
+                            overtime_after_x_hrs_hours = overtime_hours - overtime_threshold
+
+                        rate_description_first_x_hrs = f"Overtime First {overtime_first_x_hrs_hours} Hour(s)"
+
+                        # Calculate the hours eligible for overtime_after_x_hrs rate
+                        #overtime_after_x_hrs_hours = max(0, overtime_hours - overtime_threshold)
+                        rate_description_after_x_hrs = f"Overtime First {overtime_first_x_hrs_hours} and After {overtime_after_x_hrs_hours} Hour(s)"
+
+                        # Set the rate based on selected award and day
                         if selected_award == "MA000003":
                             if day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]:
-                                if hours_worked <= 2:
-                                    rate = overtime_first_x_hrs
-                                    rate_description = "Overtime First 2 Hours"
-                                elif hours_worked > 2:
-                                    rate = overtime_after_x_hrs
-                                    rate_description = "Overtime After 2 Hours"
+                                rate_first_x_hrs = overtime_first_x_hrs
+                                rate_after_x_hrs = overtime_after_x_hrs
+                                rate_description = rate_description_first_x_hrs if overtime_first_x_hrs_hours < overtime_threshold else rate_description_after_x_hrs
                                 if is_public_holiday:
-                                    rate = overtime_public_holiday
+                                    rate_first_x_hrs = overtime_public_holiday
+                                    rate_after_x_hrs = overtime_public_holiday
                                     rate_description = "Overtime PH"
                             elif day == "Sunday":
                                 if is_public_holiday:
-                                    rate = overtime_public_holiday
+                                    rate_first_x_hrs = overtime_public_holiday
+                                    rate_after_x_hrs = overtime_public_holiday
                                     rate_description = "Overtime PH"
                                 else:
-                                    rate = overtime_sunday_and_hospo_weekends
+                                    rate_first_x_hrs = overtime_sunday_and_hospo_weekends
+                                    rate_after_x_hrs = overtime_sunday_and_hospo_weekends
                                     rate_description = "Overtime Sunday"
                         elif selected_award == "MA000004":
                             if day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]:
-                                if hours_worked <= 3:
-                                    rate = overtime_first_x_hrs
-                                    rate_description = "Overtime First 3 Hours"
-                                elif hours_worked > 3:
-                                    rate = overtime_after_x_hrs
-                                    rate_description = "Overtime After 3 Hours"
+                                rate_first_x_hrs = overtime_first_x_hrs
+                                rate_after_x_hrs = overtime_after_x_hrs
+                                rate_description = rate_description_first_x_hrs if overtime_first_x_hrs_hours > 0 else rate_description_after_x_hrs
                                 if is_public_holiday:
-                                    rate = overtime_public_holiday
+                                    rate_first_x_hrs = overtime_public_holiday
+                                    rate_after_x_hrs = overtime_public_holiday
                                     rate_description = "Overtime PH"
                         elif selected_award == "MA000009":
                             if day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]:
-                                if hours_worked <= 2:
-                                    rate = overtime_first_x_hrs
-                                    rate_description = "Overtime First 2 Hours"
-                                elif hours_worked > 2:
-                                    rate = overtime_after_x_hrs
-                                    rate_description = "Overtime After 2 Hours"
+                                rate_first_x_hrs = overtime_first_x_hrs
+                                rate_after_x_hrs = overtime_after_x_hrs
+                                rate_description = rate_description_first_x_hrs if overtime_first_x_hrs_hours > 0 else rate_description_after_x_hrs
                                 if is_public_holiday:
-                                    rate = overtime_public_holiday
+                                    rate_first_x_hrs = overtime_public_holiday
+                                    rate_after_x_hrs = overtime_public_holiday
                                     rate_description = "Overtime PH"
                             elif day in ["Saturday", "Sunday"]:
                                 if is_public_holiday:
-                                    rate = overtime_public_holiday
+                                    rate_first_x_hrs = overtime_public_holiday
+                                    rate_after_x_hrs = overtime_public_holiday
                                     rate_description = "Overtime PH"
                                 else:
-                                    rate = overtime_sunday_and_hospo_weekends
+                                    rate_first_x_hrs = overtime_sunday_and_hospo_weekends
+                                    rate_after_x_hrs = overtime_sunday_and_hospo_weekends
                                     rate_description = "Overtime Sunday"
                     else:
                         is_overtime = "No"
+                        # Set the rate and rate description based on selected_award and day (as before)
                         if selected_award in ["MA000003", "MA000004", "MA000009"]:
                             if is_public_holiday:
                                 rate = public_holiday_rates
@@ -409,8 +500,12 @@ def main():
                                 rate = ordinary_rate
                                 rate_description = "Ordinary Rate"
 
-                    # Calculate pay for this day
-                    day_pay = hours_worked * rate
+                    # Calculate pay for this day, including both non-overtime and overtime rates
+                    non_overtime_pay = hours_worked * rate
+                    overtime_pay = (overtime_first_x_hrs_hours * rate_first_x_hrs) + (overtime_after_x_hrs_hours * rate_after_x_hrs)
+                    day_pay = non_overtime_pay + overtime_pay
+
+
 
                     # Append data to the table_data dictionary
                     table_data["Day"].append(day)
@@ -468,239 +563,9 @@ def main():
                 # Breakdown table
                 breakdown_df = pd.DataFrame(table_data)
                 with st.expander("Show hours calculation"):
-                    styled_df = st.data_editor(breakdown_df, hide_index=True, key="b")
+                    styled_df = st.data_editor(breakdown_df, hide_index=True)
 
         # END OF CALCULATOR MODULE
-
-        # START OF CLOCK IN/CLOCK OUT SECONDARY MODULE
-        with clock_hours:
-            with st.form("clock_hours_form"):
-                clock_day_data = {day: {"start_time": time(),
-                                        "end_time": time(),
-                                        "hours_worked":0.0,
-                                        "is_evening_shift": False,
-                                        "is_public_holiday": False,
-                                        "time_difference": time()} for day in days_of_week}
-
-                for index, day in enumerate(days_of_week):
-                    clock_col1, clock_col2, clock_col3 = st.columns(3)
-
-                    with clock_col1:
-                        start_time = st.time_input(f"Enter start time on {day}: ",
-                                                   value=time(9,0))
-
-                        clock_day_data[day]["start_time"] = start_time
-
-                    with clock_col2:
-                        end_time = st.time_input(f"Enter end time on {day}: ",
-                                                 value=time(18,0))
-
-                        clock_day_data[day]["end_time"] = end_time
-
-                    with clock_col3:
-                        clock_day_data[day]["is_evening_shift"] = st.checkbox(f"Evening shift on {day}",
-                                                                              help="Tick if your shift started or ended after 6pm")
-                        clock_day_data[day]["is_public_holiday"] = st.checkbox(f"Public holiday on {day}")
-
-                        if index < len(days_of_week) - 1:
-                            st.markdown("---")
-
-                clock_submitted = st.form_submit_button("Calculate", use_container_width=True)
-
-        if clock_submitted:
-                st.success(translator.translate("We've done the maths for you.", dest=target_lang).text, icon="✅")
-
-                st.header("This is your pay", divider="rainbow")
-
-                # Check if end time is earlier than start time
-                if start_time and end_time and end_time < start_time:
-                    st.error("End time cannot be earlier than start time.")
-
-                clock_table_data = {"Day": [], "Hours Worked": [], "Evening Shift": [], "Overtime": [],
-                              "Rate Description": [],
-                              "Rate": [], "Pay": []}
-
-                for day, data in clock_day_data.items():
-                    start_time = data["start_time"]
-                    end_time = data["end_time"]
-                    is_evening_shift = data["is_evening_shift"]
-                    is_public_holiday = data["is_public_holiday"]
-
-                # Check if end time is earlier than start time
-                    if start_time and end_time and end_time < start_time:
-                        st.error(f"End time cannot be earlier than start time on {day}.")
-                    else:
-                        start_datetime = datetime.datetime.combine(datetime.datetime.today(), start_time)
-                        end_datetime = datetime.datetime.combine(datetime.datetime.today(), end_time)
-                        time_difference = end_datetime - start_datetime
-
-                        # Calculate hours and minutes
-                        hours_worked = time_difference.seconds // 3600
-                        minutes_worked = (time_difference.seconds // 60) % 60
-
-                        # For hours x rate calculation per day
-                        total_minutes_worked = time_difference.seconds // 60  # Total minutes worked
-                        hours_worked_decimal = total_minutes_worked / 60  # Convert total minutes to decimal hours
-
-                    # DUPLICATE THE PAY RATES CALCULATION AND DECLARE RATES
-
-                    public_holiday_rates = filtered_df_penalty[
-                    (filtered_df_penalty["penaltyDescription"].str.contains("public holiday", case=False)) &
-                    (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
-
-                    # Define the default rates (non-public holiday rates)
-                    ordinary_rate = filtered_df_penalty[
-                    (filtered_df_penalty["penaltyDescription"].str.contains("ordinary hours", case=False)) &
-                    (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
-
-                    # Weekend penalty rates
-                    saturday_rate = filtered_df_penalty[
-                    (filtered_df_penalty["clauseDescription"].str.contains("ordinary and penalty rates",
-                                                                           case=False)) &
-                    (filtered_df_penalty["penaltyDescription"].str.contains("saturday", case=False)) &
-                    (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
-
-                    sunday_rate = filtered_df_penalty[
-                    (filtered_df_penalty["clauseDescription"].str.contains("ordinary and penalty rates",
-                                                                           case=False)) &
-                    (filtered_df_penalty["penaltyDescription"].str.contains("sunday", case=False)) &
-                    (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
-
-                    overtime_first_x_hrs = filtered_df_penalty[
-                    (filtered_df_penalty["clauseDescription"].str.contains("overtime rates", case=False)) &
-                    (filtered_df_penalty["penaltyDescription"].str.contains("first", case=False)) &
-                    (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
-
-                    overtime_after_x_hrs = filtered_df_penalty[
-                    (filtered_df_penalty["clauseDescription"].str.contains("overtime rates", case=False)) &
-                    (filtered_df_penalty["penaltyDescription"].str.contains("after", case=False)) &
-                    (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
-
-                    overtime_sunday_and_hospo_weekends = filtered_df_penalty[
-                    (filtered_df_penalty["clauseDescription"].str.contains("overtime rates", case=False)) &
-                    ((filtered_df_penalty["penaltyDescription"].str.contains("sunday", case=False)) |
-                     (filtered_df_penalty["penaltyDescription"].str.contains("weekends", case=False))) &
-                    (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
-
-                    overtime_public_holiday = filtered_df_penalty[
-                    (filtered_df_penalty["clauseDescription"].str.contains("overtime rates", case=False)) &
-                    (filtered_df_penalty["penaltyDescription"].str.contains("public holiday", case=False)) &
-                    (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
-
-                    # SPECIAL CALCULATION
-                    evening_penalty = filtered_df_penalty[
-                    (filtered_df_penalty["clauseDescription"].str.contains("ordinary and penalty rates", case=False)) &
-                    (filtered_df_penalty["penaltyDescription"].str.contains("Monday to Friday", case=False)) &
-                    (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
-
-                    # MA000003 = 10PM TO MIDNIGHT, MIDNIGHT TO 6AM
-                    # MA000004 = AFTER 6PM
-
-                    # ABOVE CODE ONLY ACCOUNTS FOR 10PM TO MIDNIGHT AND AFTER 6PM -- still WIP
-
-                    # END OF RATE DECLARATIONS
-
-                    clock_total_pay = 0.0
-                    days_with_evening_shifts = []
-                    days_with_more_4hs = []
-                    rolling_total_hours_worked = 0.0
-                    rolling_total_hours_worked += hours_worked
-
-                    if is_evening_shift:
-                        days_with_evening_shifts.append(day)
-
-                    if hours_worked >= 4:
-                        days_with_more_4hs.append(day)
-
-                    if hours_worked > 11 or rolling_total_hours_worked > 38:
-                        is_overtime = "Yes"
-                        if selected_award == "MA000003":
-                            if day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]:
-                                if hours_worked <= 2:
-                                    rate = overtime_first_x_hrs
-                                    rate_description = "Overtime First 2 Hours"
-                                elif hours_worked > 2:
-                                    rate = overtime_after_x_hrs
-                                    rate_description = "Overtime After 2 Hours"
-                                if is_public_holiday:
-                                    rate = overtime_public_holiday
-                                    rate_description = "Overtime PH"
-                            elif day == "Sunday":
-                                if is_public_holiday:
-                                    rate = overtime_public_holiday
-                                    rate_description = "Overtime PH"
-                                else:
-                                    rate = overtime_sunday_and_hospo_weekends
-                                    rate_description = "Overtime Sunday"
-                        elif selected_award == "MA000004":
-                            if day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]:
-                                if hours_worked <= 3:
-                                    rate = overtime_first_x_hrs
-                                    rate_description = "Overtime First 3 Hours"
-                                elif hours_worked > 3:
-                                    rate = overtime_after_x_hrs
-                                    rate_description = "Overtime After 3 Hours"
-                                if is_public_holiday:
-                                    rate = overtime_public_holiday
-                                    rate_description = "Overtime PH"
-                        elif selected_award == "MA000009":
-                            if day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]:
-                                if hours_worked <= 2:
-                                    rate = overtime_first_x_hrs
-                                    rate_description = "Overtime First 2 Hours"
-                                elif hours_worked > 2:
-                                    rate = overtime_after_x_hrs
-                                    rate_description = "Overtime After 2 Hours"
-                                if is_public_holiday:
-                                    rate = overtime_public_holiday
-                                    rate_description = "Overtime PH"
-                            elif day in ["Saturday", "Sunday"]:
-                                if is_public_holiday:
-                                    rate = overtime_public_holiday
-                                    rate_description = "Overtime PH"
-                                else:
-                                    rate = overtime_sunday_and_hospo_weekends
-                                    rate_description = "Overtime Sunday"
-                    else:
-                        is_overtime = "No"
-                        if selected_award in ["MA000003", "MA000004", "MA000009"]:
-                            if is_public_holiday:
-                                rate = public_holiday_rates
-                                rate_description = "Penalty PH Rate"
-                            elif day == "Saturday":
-                                rate = saturday_rate
-                                rate_description = "Penalty Saturday Rate"
-                            elif day == "Sunday":
-                                rate = sunday_rate
-                                rate_description = "Penalty Sunday Rate"
-                            else:
-                                rate = ordinary_rate
-                                rate_description = "Ordinary Rate"
-
-                    clock_day_pay = hours_worked_decimal * rate
-
-                    # Append data to the clock_table_data dictionary
-                    clock_table_data["Day"].append(day)
-                    clock_table_data["Hours Worked"].append(f"{hours_worked}h {minutes_worked}min")
-                    clock_table_data["Evening Shift"].append("Yes" if is_evening_shift else "No")
-                    clock_table_data["Overtime"].append(is_overtime)
-                    clock_table_data["Rate Description"].append(rate_description)
-                    clock_table_data["Rate"].append(f"${rate:.2f}")
-                    clock_table_data["Pay"].append(f"${clock_day_pay:.2f}")
-
-                    clock_total_pay += clock_day_pay
-
-                # Create a DataFrame for the clock_table_data
-                clock_breakdown_df = pd.DataFrame(clock_table_data)
-                with st.expander("Show hours calculation"):
-                    clock_styled_df = st.data_editor(clock_breakdown_df, hide_index=True)
-
-                # Download button to export breakdown table
-                csv = convert_df(clock_breakdown_df)
-                st.download_button(label="Download my wage calculations",
-                                   data=csv,
-                                   file_name="my_wage_calculations.csv",
-                                   mime="text/csv")
 
     else:
         st.header("Pay Award Descriptions", divider="rainbow")
@@ -794,8 +659,10 @@ def main():
     # CLOSING NOTES
 
     st.header("Creators note", divider="rainbow")
-    st.markdown(''':rainbow[Created and designed by the Wage Warriors for UTS iLab2 Spring 2023 in association with the Australian Payroll Association.
-                                    Data obtained from the Fair Work Commission and Fair Work Ombudsman websites.]''')
+    st.markdown('''
+                                    :rainbow[Created and designed by the Wage Warriors for UTS iLab2 Spring 2023 in association with the Australian Payroll Association.
+                                    Data obtained from the Fair Work Commission and Fair Work Ombudsman websites.]
+                                    ''')
 
 
 if __name__ == '__main__':
