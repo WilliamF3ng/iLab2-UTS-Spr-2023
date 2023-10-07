@@ -1,9 +1,12 @@
 import streamlit as st
-from googletrans import Translator
+from streamlit_extras.app_logo import add_logo
+add_logo("gallery/ResizeWW.png", height=100)
 
+from googletrans import Translator
 translator = Translator()
 
-st.header("Need help finding your award classification?")
+st.header("Need help finding your award classification?", divider="rainbow")
+
 
 translate_lang = st.selectbox(" :globe_with_meridians: "
                               "Currently supporting 10 languages. Choose your language: ",
