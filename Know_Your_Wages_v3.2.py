@@ -1,7 +1,5 @@
 import streamlit as st
-import streamlit_extras
-from streamlit_extras.switch_page_button import switch_page
-
+#import bcrypt
 import datetime
 from datetime import time
 
@@ -160,14 +158,8 @@ def main():
             user_classification = st.selectbox(translator.translate("Choose your classification: ",
                                                                     dest=target_lang).text,
                                                unique_classification)
-            #st.caption(
-            #    "Don't know your classification level? [Click here!](https://www.fairwork.gov.au/employment-conditions/awards/award-classifications)")
-
-            # New page switcher
-            find_classification = st.button("I don't know my classification level")
-            if find_classification:
-                switch_page("Find_my_award_level")
-
+            st.caption(
+                "Don't know your classification level? [Click here!](https://www.fairwork.gov.au/employment-conditions/awards/award-classifications)")
 
             filtered_df = filtered_df[filtered_df["classification"] == user_classification]
             filtered_df_penalty = filtered_df_penalty[
