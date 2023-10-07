@@ -7,6 +7,7 @@ translator = Translator()
 
 st.header("Need help finding your award classification?", divider="rainbow")
 
+
 translate_lang = st.selectbox(" :globe_with_meridians: "
                               "Currently supporting 10 languages. Choose your language: ",
                               ["English", "简体中文", "हिंदी", "العربية", "Bahasa Indonesia",

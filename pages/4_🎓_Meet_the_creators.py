@@ -7,6 +7,7 @@ add_logo("gallery/ResizeWW.png", height=100)
 st.header("Meet the brains behind Know Your Wages", divider="rainbow")
 st.markdown('''UTS Master of Data Science and Innovation (MDSI) students, partnered with Australian Payroll Association.''')
 
+
 image = Image.open("gallery/WW.png")
 st.image(image)
 

@@ -9,3 +9,4 @@ st.header("Exploring unfair pay", divider="rainbow")
 fairpay = Image.open("gallery/Fair Pay.jpg")
 st.image(fairpay, caption="Photo by Ehimetalor Akhere Unuabona, from Unsplash")
 
+
