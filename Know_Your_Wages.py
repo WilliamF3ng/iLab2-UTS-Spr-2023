@@ -11,6 +11,9 @@ from googletrans import Translator
 
 translator = Translator()
 
+from streamlit_extras.app_logo import add_logo
+add_logo("gallery/ResizeWW.png", height=100)
+
 # Exact same app code below
 @st.cache_data
 def convert_df(df):
@@ -160,8 +163,8 @@ def main():
             user_classification = st.selectbox(translator.translate("Choose your classification: ",
                                                                     dest=target_lang).text,
                                                unique_classification)
-            #st.caption(
-            #    "Don't know your classification level? [Click here!](https://www.fairwork.gov.au/employment-conditions/awards/award-classifications)")
+            st.caption(
+                "Don't know your classification level? [Click here!](https://www.fairwork.gov.au/employment-conditions/awards/award-classifications)")
 
             # New page switcher
             find_classification = st.button("I don't know my classification level")
