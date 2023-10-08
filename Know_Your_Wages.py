@@ -10,6 +10,7 @@ import requests
 from googletrans import Translator
 
 translator = Translator()
+st.set_page_config(layout="wide")
 
 from streamlit_extras.app_logo import add_logo
 add_logo("gallery/ResizeWW.png", height=100)
@@ -151,6 +152,7 @@ def main():
             user_clauseDescription = st.selectbox(
                 translator.translate("Choose the best job description from the options below: ",
                                      dest=target_lang).text, unique_clauseDescription)
+            st.caption("Adults are considered 21 years or older.")
 
             filtered_df = filtered_df[filtered_df["clauseDescription"] == user_clauseDescription]
 
@@ -163,8 +165,8 @@ def main():
             user_classification = st.selectbox(translator.translate("Choose your classification: ",
                                                                     dest=target_lang).text,
                                                unique_classification)
-            st.caption(
-                "Don't know your classification level? [Click here!](https://www.fairwork.gov.au/employment-conditions/awards/award-classifications)")
+            #st.caption(
+            #    "Don't know your classification level? [Click here!](https://www.fairwork.gov.au/employment-conditions/awards/award-classifications)")
 
             # New page switcher
             find_classification = st.button("I don't know my classification level")
@@ -481,6 +483,13 @@ def main():
                 with st.expander("Show hours calculation"):
                     styled_df = st.data_editor(breakdown_df, hide_index=True, key="b")
 
+                # Download button to export breakdown table
+                csv = convert_df(breakdown_df)
+                st.download_button(label="Download my wage calculations",
+                                    data=csv,
+                                    file_name="my_wage_calculations.csv",
+                                    mime="text/csv")
+
         # END OF CALCULATOR MODULE
 
         # START OF CLOCK IN/CLOCK OUT SECONDARY MODULE
@@ -515,6 +524,11 @@ def main():
 
                         if index < len(days_of_week) - 1:
                             st.markdown("---")
+
+                # Superannuation slider
+                clock_superannuation_rate = st.slider("Superannuation rate", min_value=11.0, max_value=15.0,
+                                                value=11.0, step=0.5,
+                                                format="%f%%")
 
                 clock_submitted = st.form_submit_button("Calculate", use_container_width=True)
 
@@ -701,6 +715,46 @@ def main():
 
                     clock_total_pay += clock_day_pay
 
+                    # is_under_18 = user_classification.lower().strip() in [
+                    #     "under 16 years",
+                    #     "16 years",
+                    #     "17 years",
+                    #     "15 years of age and under",
+                    #     "16 years of age",
+                    #     "17 years of age",
+                    #     "16 years of age and under"
+                    # ]
+                    # if is_under_18 and total_hours_worked < 30:
+                    #     superannuation_per_week = 0.00
+                    # else:
+                    #     superannuation_per_week = (clock_total_pay * clock_superannuation_rate) / 100
+                    #
+                    # st.write(
+                    #     f"You have worked {total_hours_worked:.1f} hours! Your total gross pay is ${total_pay:.2f}.")
+                    # st.caption(
+                    #     ":bulb: Gross pay is the total amount of money you earn before taxes or deductions are removed.",
+                    #     help="Your employer may deduct taxes if you've provided your Australian Tax File Number.")
+                    # st.write(f"Your superannuation this week is ${superannuation_per_week:.2f}. "
+                    #          f"If you think this is :red[wrong], please double check you've entered the correct hours above or look at the Next Steps below.")
+                    #
+                    # if days_with_more_4hs:
+                    #     st.write(
+                    #         f"- :hamburger: On {', '.join(days_with_more_4hs)}, you should've been allowed to take a lunch break. "
+                    #         "Usually this break can be between 30 minutes to 1 hour depending on your shift and your employer.")
+                    #
+                    # if days_with_evening_shifts:
+                    #     st.write(
+                    #         f"- :crescent_moon: On {', '.join(days_with_evening_shifts)}, you worked evening shift(s). You may be entitled to additional pay.")
+                    # if selected_award == "MA000003":
+                    #     st.write(
+                    #         "Your evening rate is 110% of your ordinary pay from Monday to Friday 10pm to midnight OR 115% from midnight to 6am.")
+                    # elif selected_award == "MA000004":
+                    #     st.write(
+                    #         "Your evening rate is 125% of your ordinary pay from Monday to Friday after 6pm.")
+                    # else:
+                    #     st.write(
+                    #         "Your evening rate is \$ 2.62 per hr extra from 7pm to midnight OR $ 3.93 per hr from midnight to 7am.")
+
                 # Create a DataFrame for the clock_table_data
                 clock_breakdown_df = pd.DataFrame(clock_table_data)
                 with st.expander("Show hours calculation"):
@@ -714,29 +768,83 @@ def main():
                                    mime="text/csv")
 
     else:
-        st.header("Pay Award Descriptions", divider="rainbow")
+        st.header("Understanding the Pay Award", divider="rainbow")
         employer_selected = st.radio("Choose the relevant pay award for more information.",
-                                     ("Fast Food Industry Award (MA000003)",
-                                      "General Retail Industry Award (MA000004)",
-                                      "Hospitality Industry (General) Award (MA000009)"))
+                                     ("Fast Food Industry Award",
+                                      "General Retail Industry Award",
+                                      "Hospitality Industry (General) Award"))
 
-        if employer_selected == "Fast Food Industry Award (MA000003)":
-            st.write("This pay award covers employers and employees working in the fast food industry. "
-                     "Including jobs such as taking orders (including via an app), cooking and selling fast food, baristas, delivery drivers and supervisors.  "
-                     "For more info, visit https://www.fairwork.gov.au/employment-conditions/awards/awards-summary/ma000003-summary")
+        if employer_selected == "Fast Food Industry Award":
+            st.write('''
+            **Fast Food Award**
+            
+           \n  1. Who Does the Fast Food Award Cover?
+           \n The Fast Food Award encompasses a wide spectrum of roles within the fast food industry. 
+           This includes businesses involved in order-taking, food preparation, sales, and delivery of fast food designed for take-away consumption. 
+           Employees within this award category include order takers, cooks, baristas, delivery drivers, and supervisors in fast food establishments. 
+           Furthermore, the award extends its coverage to labor hire businesses and their employees placed within the fast food sector.
+           \n 2. What Qualifies as Fast Food?
+           \n Fast foods, as defined under this award, are meals, snacks, and beverages intended for consumption away from the point of sale. 
+           These items are packaged to facilitate consumption in alternate locations and are commonly found in food courts, shopping centers, and retail complexes. 
+           Businesses engaged in the preparation and sale of fast food, even if delivered by third parties, fall within the purview of this award.
+           \n 3. Who Isn’t Covered by the Fast Food Award?
+           \n It's crucial to recognize the exceptions. The Fast Food Award does not apply to businesses such as cafes, restaurants, coffee shops, or bars where food and beverages are primarily intended for on-premises consumption. 
+           Additionally, employers and employees falling under the Restaurant Award, Hospitality Award, or Retail Award are not covered. 
+           Employees delivering goods prepared by fast food businesses but not directly employed by them are also exempt from this award's provisions.
+           \n For detailed information on the classifications and coverage, please refer to [clauses 2, 4, and 12 of the Fast Food Industry Award [MA000003]](https://library.fairwork.gov.au/award/?krn=ma000003).
+            ''')
 
-        if employer_selected == "General Retail Industry Award (MA000004)":
-            st.write(
-                "This pay award covers employers and employees working in the general retail industry. "
-                "Including jobs such as check-out operators, sales assistants, stock hands, shelf stackers, salespersons, store managers, "
-                "tradespersons (butchers, bakers, florists) and travel agents."
-                "For more info, visit https://www.fairwork.gov.au/employment-conditions/awards/awards-summary/ma000004-summary")
+        if employer_selected == "General Retail Industry Award":
+            st.write('''
+            **General Retail Award**
+            
+            \n 1. Who Does the Retail Award Cover?
+            \n The Retail Award extends its coverage to employers operating in the general retail industry and their employees who fall within the specified classifications. 
+            The general retail industry encompasses the sale or hire of goods and services for personal, household, or business use. 
+            \n This includes a diverse range of products and services such as clothing, food, furniture, household goods, bakery products, repair services, and even the delivery of newspapers.
+            Employees covered under the Retail Award include a broad spectrum of roles, such as check-out operators, sales assistants, stock hands, door-to-door salespersons, trolley collectors, service supervisors, department and store managers, tradespersons like butchers, bakers, and florists, employees selling travel packages, back-office clerical staff in retail shops, and electrical device repairers.
+            \n Additionally, labour hire businesses and their employees placed within organizations in the retail industry are also included under the award's coverage.
+            \n For detailed information on classifications and coverage, please refer to [clauses 2, 4, and Schedule A of the General Retail Industry Award [MA000004]](https://library.fairwork.gov.au/award/?krn=MA000004).
+            
+            \n 2. Who Isn’t Covered by the Retail Award?
+            \n The Retail Award does not apply to specific establishments and activities within the retail sector. Employers and employees engaged in the following are exempt from the Retail Award:
+            \n - Retail sale or hire of goods or services by community pharmacies, pharmacies in hospitals or other in-patient institutions, hair and beauty establishments, stand-alone butcher shops, and nurseries.
+            \n - Manufacturing or processing establishments (excluding seafood processing establishments).
+            \n - Hair and beauty work undertaken in the theatrical, amusement, or entertainment industries.
+            \n - Clerical functions performed away from retail establishments, warehousing, and distribution.
+            \n - Motor vehicle retailing and motor vehicle fuel and parts retailing.
+            \n - Restaurants, cafes, hotels, motels, and fast food operations.
+            \n - Building, construction, installation, repair, or maintenance contractors engaged to perform work at a retail establishment.
+            \n Additionally, employers and employees covered by specific awards such as the Fast Food Award, Hair and Beauty Award, Meat Award, and Pharmacy Award are not subject to the Retail Award's provisions.
+            \n Understanding these exemptions is crucial for employers to ensure compliance with applicable regulations and standards.
+            ''')
 
-        if employer_selected == "Hospitality Industry (General) Award (MA000009)":
-            st.write("This pay award covers employers and employees working in the hospitality industry. "
-                     "Including jobs such as waiters/waitresses, kitchen hands, cooks/chefs, housekeepers, concierge/reception staff, gaming attendants, "
-                     "security officers, casino staff, catering staff and pub owners. "
-                     "For more info, visit https://www.fairwork.gov.au/employment-conditions/awards/awards-summary/ma000009-summary")
+        if employer_selected == "Hospitality Industry (General) Award":
+            st.write('''
+            **Hospitality Industry (General) Award**
+            
+            \n 1. Who Does the Hospitality Award Cover?
+            \n The Hospitality Award extends its coverage to employers in various sectors of the hospitality industry, including tourist accommodations, wine saloons, caterers, casinos, nightclubs, convention facilities, and restaurants associated with covered employers. 
+            \n Examples of roles covered include waiters, kitchen hands, cooks, housekeepers, clerical staff, gaming attendants, security officers, managerial staff (excluding senior management), and catering employees, among others. 
+            Labour hire businesses and their employees placed within the hospitality industry also fall under the award's coverage.
+            \n For detailed information on specific classifications, please refer to [clauses 2, 4, and Schedule A of the Hospitality Industry (General) Award [MA000009]](https://library.fairwork.gov.au/award/?krn=MA000009).
+            
+            \n 2. Who Isn’t Covered by the Hospitality Award?
+            \n Certain employers and employees are exempt from the Hospitality Award. These include:
+            \n - Clubs: Clubs registered or recognized under state or territory legislation.
+            \n - In-flight Catering: Employees engaged in in-flight catering for airlines.
+            \n - Educational Institutions: Employees in boarding schools and residential colleges.
+            \n - Healthcare Institutions: Employees in hospitals.
+            \n - Local Councils: Employees of local councils.
+            \n - Catering in Certain Facilities: Catering employees in restaurant businesses or aged care facilities.
+            \n - Theme Parks: Employees in theme parks, except for those exclusively operating in the hospitality industry.
+            \n - Contract Cleaning Businesses: Employees in contract cleaning businesses not exclusively in the hospitality industry.
+            \n - Senior Management: Senior management personnel responsible for significant areas of the business, including company secretaries, chief accountants, and venue managers.
+            \n - Contract Services: Contract security, gardening, or maintenance provided by businesses not primarily in the hospitality industry.
+            \n - Strata Management: Employees in strata management businesses.
+            \n - Entertainers: Musicians and dancers performing in hotels.
+            \n Additionally, employers and employees falling under specific awards like the Registered Clubs Award, Restaurant Award, Fast Food Award, and Alpine Resorts Award are not subject to the Hospitality Award's provisions.
+            ''')
 
     # NEXT STEPS
 
@@ -782,13 +890,10 @@ def main():
         st.write(f":earth_asia: For translation services and language assistance, call 13 14 50.")
 
     else:
-        st.header("Employer Resources", divider="rainbow")
-        st.write('''Please refer to the following links:
-                                        \n - [Fair Work Ombudsman Definitions](https://www.fairwork.gov.au/dictionary)
-                                        \n - [Fair Work Ombudsman Online Learning Centre](https://www.fairwork.gov.au/tools-and-resources/online-learning-centre)
-                                        \n - [Fair Work Ombudsman Downloaded Templates](https://www.fairwork.gov.au/tools-and-resources/templates)
-                                        \n - [Need more help? Click here](https://services.fairwork.gov.au/get-help)
-                                        ''')
+        st.subheader(translator.translate("Want more info?", dest=target_lang).text)
+        retail_to_home = st.button("Take me to some Helpful Resources :arrow_forward:")
+        if retail_to_home:
+            switch_page("Helpful resources")
 
     # DISCLAIMER SECTION
 
