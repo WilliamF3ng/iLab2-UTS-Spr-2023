@@ -214,6 +214,11 @@ def main():
                                                         .str.contains("casino gaming employees",
                                                                       case=False) == True)]
 
+            # Removed shiftworkers
+            filtered_df_penalty = filtered_df_penalty[~(filtered_df_penalty["clauseDescription"]
+                                                        .str.contains("shiftwork and penalty rates",
+                                                                      case=False) == True)]
+
             # DISPLAY THE PAY RATES BELOW
 
             # Select only the relevant columns
@@ -333,26 +338,32 @@ def main():
                     (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
 
             # Overtime rates
-            overtime_first_x_hrs = filtered_df_penalty[
-                (filtered_df_penalty["clauseDescription"].str.contains("overtime rates", case=False)) &
-                (filtered_df_penalty["penaltyDescription"].str.contains("first", case=False)) &
-                (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
+            if selected_award == "MA000003" or selected_award == "MA000009":
+                overtime_first_x_hrs = filtered_df_penalty[
+                    (filtered_df_penalty["clauseDescription"].str.contains("overtime rates", case=False)) &
+                    (filtered_df_penalty["penaltyDescription"].str.contains("first", case=False)) &
+                    (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
 
-            overtime_after_x_hrs = filtered_df_penalty[
-                (filtered_df_penalty["clauseDescription"].str.contains("overtime rates", case=False)) &
-                (filtered_df_penalty["penaltyDescription"].str.contains("after", case=False)) &
-                (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
+                overtime_after_x_hrs = filtered_df_penalty[
+                    (filtered_df_penalty["clauseDescription"].str.contains("overtime rates", case=False)) &
+                    (filtered_df_penalty["penaltyDescription"].str.contains("after", case=False)) &
+                    (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
 
-            overtime_sunday_and_hospo_weekends = filtered_df_penalty[
-                (filtered_df_penalty["clauseDescription"].str.contains("overtime rates", case=False)) &
-                ((filtered_df_penalty["penaltyDescription"].str.contains("sunday", case=False)) |
-                (filtered_df_penalty["penaltyDescription"].str.contains("weekends", case=False))) &
-                (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
+                overtime_sunday_and_hospo_weekends = filtered_df_penalty[
+                    (filtered_df_penalty["clauseDescription"].str.contains("overtime rates", case=False)) &
+                    ((filtered_df_penalty["penaltyDescription"].str.contains("sunday", case=False)) |
+                    (filtered_df_penalty["penaltyDescription"].str.contains("weekends", case=False))) &
+                    (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
 
-            overtime_public_holiday = filtered_df_penalty[
-                (filtered_df_penalty["clauseDescription"].str.contains("overtime rates", case=False)) &
-                (filtered_df_penalty["penaltyDescription"].str.contains("public holiday", case=False)) &
-                (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
+                overtime_public_holiday = filtered_df_penalty[
+                    (filtered_df_penalty["clauseDescription"].str.contains("overtime rates", case=False)) &
+                    (filtered_df_penalty["penaltyDescription"].str.contains("public holiday", case=False)) &
+                    (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
+            else:
+                overtime_first_x_hrs = 0
+                overtime_after_x_hrs = 0
+                overtime_sunday_and_hospo_weekends = 0
+                overtime_public_holiday = 0
 
             # Evening Penalty rates after 6pm
             # Assumption that 6pm applied penalty rates, although some award doesn't have these rates.
@@ -412,8 +423,12 @@ def main():
                             ordinary_hours = hours_worked_decimal
                             overtime_hours = 0
                         else:
-                            overtime_hours = min(hours_worked_decimal, rolling_total_hours_worked - 38)
-                            ordinary_hours = max(0, hours_worked_decimal - overtime_hours)
+                            if selected_award == "MA000004" and employment_type == "Casual":
+                                overtime_hours = 0
+                                ordinary_hours = hours_worked_decimal
+                            else:
+                                overtime_hours = min(hours_worked_decimal, rolling_total_hours_worked - 38)
+                                ordinary_hours = max(0, hours_worked_decimal - overtime_hours)
 
                         # Update the dictionary with calculated values
                         clock_day_data[day]["ordinary_hours"] = ordinary_hours
