@@ -328,9 +328,9 @@ def main():
                         (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
             else:
                 sunday_rate = filtered_df_penalty[
-                (filtered_df_penalty["clauseDescription"].str.contains("ordinary and penalty rates", case=False)) &
-                (filtered_df_penalty["penaltyDescription"].str.contains("sunday", case=False)) &
-                (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
+                    (filtered_df_penalty["clauseDescription"].str.contains("ordinary and penalty rates", case=False)) &
+                    (filtered_df_penalty["penaltyDescription"].str.contains("sunday", case=False)) &
+                    (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
 
             # Overtime rates
             overtime_first_x_hrs = filtered_df_penalty[
