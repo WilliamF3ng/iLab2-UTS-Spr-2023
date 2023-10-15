@@ -260,20 +260,17 @@ def main():
             # Define list of variables for each day
             clock_day_data = {day: {"start_time": time(),
                                     "end_time": time(),
-                                    "breaks_taken": time(),
-                                    "hours_worked": 0.0,
+                                    "hours_worked":0.0,
                                     "overtime_hours": 0.0,
                                     "ordinary_hours": 0.0,
-                                    "evening_hours": 0.0,
+                                    "evening hours": 0.0,
                                     "is_evening_penalty": False,
                                     "is_public_holiday": False} for day in days_of_week}
                                     #"time_difference": time()} for day in days_of_week}
 
             # For each day in the week, find start time, end times and if it's a public holiday or not
             for index, day in enumerate(days_of_week):
-                st.subheader(day)
-
-                clock_col1, clock_col2, clock_col3, clock_col4 = st.columns(4)
+                clock_col1, clock_col2, clock_col3 = st.columns(3)
 
                 with clock_col1:
                     start_time = st.time_input(f"Enter start time on {day}: ", value=None)
@@ -284,21 +281,13 @@ def main():
                     clock_day_data[day]["end_time"] = end_time # Save the End Time into the day's list
 
                 with clock_col3:
-                    breaks_taken = st.time_input(f"Enter total breaks on {day}: ", value=time(0,0))
-                    #breaks_taken = st.number_input(f"Enter total breaks on {day}: ", step=0.25, min_value= 0.00, max_value=23.75)
-                    clock_day_data[day]["breaks_taken"] = breaks_taken  # Save the Breaks Time into the day's list
-
-                with clock_col4:
                     clock_day_data[day]["is_public_holiday"] = st.checkbox(f"Public holiday on {day}") # Save the Public Holiday as Yes/No response.
 
                     # Separate each line with --- for pretty UI
-                    # if index < len(days_of_week) - 1:
-                    #     st.markdown("---")
-
-                st.markdown("---")
+                    if index < len(days_of_week) - 1:
+                        st.markdown("---")
 
             # Ask the user to set their Superannuation rate, min 11% to max 15%
-            st.subheader("Your superannuation")
             clock_superannuation_rate = st.slider("Superannuation rate", min_value=11.0, max_value=15.0, value=11.0, step=0.5, format="%f%%")
 
             # Submit all above details
@@ -310,7 +299,7 @@ def main():
 
             st.header("This is your pay", divider="rainbow")
 
-            clock_table_data = {"Day": [], "Hours Worked": [], "Breaks Taken": [], "Ordinary Hours":[], "Overtime Hours": [], "Overtime": [], "Evening Hours": [],
+            clock_table_data = {"Day": [], "Hours Worked": [], "Ordinary Hours":[], "Overtime Hours": [], "Overtime": [], "Evening Hours": [],
                                  "Evening Penalty":[], "Rate Description": [], "Rate": [], "Pay": []}
 
             # RATES DECLARATION
@@ -404,7 +393,6 @@ def main():
             for day, data in clock_day_data.items():
                 start_time = data["start_time"]
                 end_time = data["end_time"]
-                breaks_taken = data["breaks_taken"]
                 is_public_holiday = data["is_public_holiday"]
 
                 # Check if end time is earlier than start time
@@ -413,66 +401,49 @@ def main():
 
                     # stop script if above error presents
                     st.stop()
+
                 else:
-                    if start_time and end_time and breaks_taken:
+                    if start_time and end_time:
                         start_datetime = datetime.datetime.combine(datetime.datetime.today(), start_time)
                         end_datetime = datetime.datetime.combine(datetime.datetime.today(), end_time)
+                        time_difference = end_datetime - start_datetime
 
-                        # ORIGINAL CODE BEFORE BREAKS FUNCTIONALITY
-                        # time_difference = end_datetime - start_datetime
-                        #
-                        # # Calculate hours and minutes
-                        # hours_worked = time_difference.seconds // 3600
-                        # minutes_worked = (time_difference.seconds // 60) % 60
-                        #
-                        # # For hours x rate calculation per day
-                        # total_minutes_worked = time_difference.seconds // 60  # Total minutes worked
-                        # hours_worked_decimal = total_minutes_worked / 60  # Convert total minutes to decimal hours
-                        #
-                        # rolling_total_hours_worked += hours_worked_decimal
+                        # Calculate hours and minutes
+                        hours_worked = time_difference.seconds // 3600
+                        minutes_worked = (time_difference.seconds // 60) % 60
 
-                        # MODIFIED CODE TO EXCLUDE BREAKS
-                        time_difference = (end_datetime - start_datetime).seconds // 60
-                        break_minutes = breaks_taken.hour * 60 + breaks_taken.minute
+                        # For hours x rate calculation per day
+                        total_minutes_worked = time_difference.seconds // 60  # Total minutes worked
+                        hours_worked_decimal = total_minutes_worked / 60  # Convert total minutes to decimal hours
 
-                        if break_minutes >= time_difference:
-                            st.error(f"Breaks taken cannot be equal or longer than the entire day worked on {day}. Please check what you've entered and try again.")
-                            st.stop()
+                        rolling_total_hours_worked += hours_worked_decimal
+
+                        # Calculate ordinary and overtime hours - # Working now
+                        if rolling_total_hours_worked <= 38:
+                            ordinary_hours = hours_worked_decimal
+                            overtime_hours = 0
                         else:
-                            total_minutes_worked = time_difference - break_minutes
-                            hours_worked_decimal = total_minutes_worked / 60
-
-                            hours_worked = total_minutes_worked // 60
-                            remaining_minutes = total_minutes_worked % 60
-
-                            rolling_total_hours_worked += hours_worked_decimal
-
-                            # Calculate ordinary and overtime hours - # Working now
-                            if rolling_total_hours_worked <= 38:
-                                ordinary_hours = hours_worked_decimal
+                            if selected_award == "MA000004" and employment_type == "Casual":
                                 overtime_hours = 0
+                                ordinary_hours = hours_worked_decimal
                             else:
-                                if selected_award == "MA000004" and employment_type == "Casual":
-                                    overtime_hours = 0
-                                    ordinary_hours = hours_worked_decimal
-                                else:
-                                    overtime_hours = min(hours_worked_decimal, rolling_total_hours_worked - 38)
-                                    ordinary_hours = max(0, hours_worked_decimal - overtime_hours)
+                                overtime_hours = min(hours_worked_decimal, rolling_total_hours_worked - 38)
+                                ordinary_hours = max(0, hours_worked_decimal - overtime_hours)
 
-                            # Update the dictionary with calculated values
-                            clock_day_data[day]["ordinary_hours"] = ordinary_hours
-                            clock_day_data[day]["overtime_hours"] = overtime_hours
+                        # Update the dictionary with calculated values
+                        clock_day_data[day]["ordinary_hours"] = ordinary_hours
+                        clock_day_data[day]["overtime_hours"] = overtime_hours
 
-                            # Show which days the user is entitled to a break
-                            if hours_worked_decimal >= 4:
-                                days_with_more_4hs.append(day)
+                        # Show which days the user is entitled to a break
+                        if hours_worked_decimal >= 4:
+                            days_with_more_4hs.append(day)
 
-                            is_evening_penalty = "No"
-                            evening_time = time(18,0)
-                            if end_time > evening_time:
-                                is_evening_penalty = "Yes"
-                                evening_datetime = datetime.datetime.combine(end_datetime.date(), evening_time)
-                                evening_hours_decimal = (end_datetime - evening_datetime).seconds / 3600
+                        is_evening_penalty = "No"
+                        evening_time = time(18,0)
+                        if end_time > evening_time:
+                            is_evening_penalty = "Yes"
+                            evening_datetime = datetime.datetime.combine(end_datetime.date(), evening_time)
+                            evening_hours_decimal = (end_datetime - evening_datetime).seconds / 3600
 
                     else:
                         # If there are no times enter for the Start and End Times, then skip that day and move on
@@ -598,8 +569,7 @@ def main():
 
                 # Append data to the clock_table_data dictionary
                 clock_table_data["Day"].append(day)
-                clock_table_data["Hours Worked"].append(f"{hours_worked}h {remaining_minutes}min")
-                clock_table_data["Breaks Taken"].append(f"{breaks_taken.hour}h {breaks_taken.minute}min")
+                clock_table_data["Hours Worked"].append(f"{hours_worked}h {minutes_worked}min")
                 clock_table_data["Ordinary Hours"].append(f"{ordinary_hours}h")
                 clock_table_data["Overtime Hours"].append(f"{overtime_hours}h")
                 clock_table_data["Overtime"].append(is_overtime)
