@@ -58,7 +58,7 @@ if award is not None:
 
     if award == "Fast Food Industry Award":
         fastfood = Image.open("gallery/Fast Food.jpg")
-        st.image(fastfood, use_column_width=True)
+        st.image(fastfood, width=400)
 
         st.subheader(translator.translate("You have selected the Fast Food Industry Award. Let's understand your work rights!",dest=target_lang).text)
 
@@ -128,7 +128,7 @@ if award is not None:
 
     elif award == "General Retail Industry Award":
         retail = Image.open("gallery/Retail.jpg")
-        st.image(retail, use_column_width=True)
+        st.image(retail, width=400)
 
         st.subheader(
             translator.translate("You have selected the General Retail Industry Award. Let's understand your work rights!",
@@ -217,7 +217,7 @@ if award is not None:
 
     elif award == "Hospitality Industry (General) Award":
         hospo = Image.open("gallery/Hospitality.png")
-        st.image(hospo, use_column_width=True)
+        st.image(hospo, width=400)
 
         st.subheader(
             translator.translate("You have selected the Hospitality Industry (General) Award. Let's understand your work rights!",
