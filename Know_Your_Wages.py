@@ -356,12 +356,14 @@ def main():
 
             # Evening Penalty rates after 6pm
             # Assumption that 6pm applied penalty rates, although some award doesn't have these rates.
-            evening_penalty = filtered_df_penalty[
-                (filtered_df_penalty["clauseDescription"].str.contains("ordinary and penalty rates", case=False)) &
-                (filtered_df_penalty["penaltyDescription"].str.contains("Monday to Friday", case=False)) &
-                (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
-
-            additional_evening_penalty = evening_penalty - ordinary_rate
+            if selected_award == "MA000003" or selected_award == "MA000004":
+                evening_penalty = filtered_df_penalty[
+                    (filtered_df_penalty["clauseDescription"].str.contains("ordinary and penalty rates", case=False)) &
+                    (filtered_df_penalty["penaltyDescription"].str.contains("Monday to Friday", case=False)) &
+                    (filtered_df_penalty["rate"].notna())]["penaltyCalculatedValue"].iloc[0]
+                additional_evening_penalty = evening_penalty - ordinary_rate
+            else:
+                additional_evening_penalty = 0.0
 
             # END OF RATE DECLARATIONS
 
@@ -582,7 +584,7 @@ def main():
             st.caption(":bulb: Gross pay is the total amount of money you earn before taxes or deductions are removed.",
                             help="Your employer may deduct taxes if you've provided your Australian Tax File Number.")
 
-            if is_evening_penalty:
+            if selected_award == "MA000003" or selected_award == "MA000004":
                 st.write(f"- For your evening hours, a ${evening_penalty:.2f} evening penalty rate was calculated.")
                 st.caption(":crescent_moon: Evening hours is defined as any hours worked after 6pm from Monday to Friday. This is only applicable to workers covered by the Fast Food Industry and General Retail Awards.",
                        help="If you are unsure of your award, you can find more info on the Find my Award Level page.")
