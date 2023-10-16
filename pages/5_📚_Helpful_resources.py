@@ -4,7 +4,7 @@ add_logo("gallery/ResizeWW.png", height=100)
 
 from PIL import Image
 st.image("gallery/fwo.png", use_column_width=True)
-st.header(":female-teacher: Helpful resources", divider="rainbow")
+st.header("Helpful resources", divider="rainbow")
 
 st.write('''
 The Australian Fair Work Ombudsman maintains a large collection of helpful resources, designed to support both employees and employers. 

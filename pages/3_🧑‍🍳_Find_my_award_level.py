@@ -9,7 +9,7 @@ from PIL import Image
 from googletrans import Translator
 translator = Translator()
 
-st.header(":thinking_face: Need help finding your award level?", divider="rainbow")
+st.header("Need help finding your award level?", divider="rainbow")
 
 
 translate_lang = st.selectbox(" :globe_with_meridians: "
