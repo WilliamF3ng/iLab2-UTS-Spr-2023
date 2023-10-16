@@ -6,9 +6,6 @@ add_logo("gallery/ResizeWW.png", height=100)
 
 st.header("Unfair pay is everywhere!", divider="rainbow")
 
-#fairpay = Image.open("gallery/Fair Pay.jpg")
-#st.image(fairpay, caption="Photo by Ehimetalor Akhere Unuabona, from Unsplash")
-
 st.markdown('''
 Minimum wage establishes a baseline income for workers of any industry in a given jurisdiction. The idea behind minimum wage is to ensure that one’s basic needs, such as food, housing, and a certain number of bills, are met. However, this may not always be the case.
 
