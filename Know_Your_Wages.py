@@ -209,12 +209,12 @@ def main():
                                                         .str.contains("Early morning shifts",
                                                                       case=False) == True)]
 
-            # CONTINUED INTERIM REMOVAL OF CASINO GAMING EMPLOYEE
+            # Removed casino gaming employee due to loaded rate complexity
             filtered_df_penalty = filtered_df_penalty[~(filtered_df_penalty["clauseDescription"]
                                                         .str.contains("casino gaming employees",
                                                                       case=False) == True)]
 
-            # Removed shiftworkers
+            # Removed shift workers
             filtered_df_penalty = filtered_df_penalty[~(filtered_df_penalty["clauseDescription"]
                                                         .str.contains("shiftwork and penalty rates",
                                                                       case=False) == True)]
@@ -267,9 +267,8 @@ def main():
                                     "evening_hours": 0.0,
                                     "is_evening_penalty": False,
                                     "is_public_holiday": False} for day in days_of_week}
-                                    #"time_difference": time()} for day in days_of_week}
 
-            # For each day in the week, find start time, end times and if it's a public holiday or not
+            # For each day in the week, find start, end and break times and if it's a public holiday or not
             for index, day in enumerate(days_of_week):
                 st.subheader(day)
 
@@ -285,15 +284,10 @@ def main():
 
                 with clock_col3:
                     breaks_taken = st.time_input(f"Enter total breaks on {day}: ", value=time(0,0))
-                    #breaks_taken = st.number_input(f"Enter total breaks on {day}: ", step=0.25, min_value= 0.00, max_value=23.75)
                     clock_day_data[day]["breaks_taken"] = breaks_taken  # Save the Breaks Time into the day's list
 
                 with clock_col4:
                     clock_day_data[day]["is_public_holiday"] = st.checkbox(f"Public holiday on {day}") # Save the Public Holiday as Yes/No response.
-
-                    # Separate each line with --- for pretty UI
-                    # if index < len(days_of_week) - 1:
-                    #     st.markdown("---")
 
                 st.markdown("---")
 
@@ -400,8 +394,7 @@ def main():
                         overtime_sunday_and_hospo_weekends = 0
                         overtime_public_holiday = 0
 
-            # Evening Penalty rates after 6pm
-            # Assumption that 6pm applied penalty rates, although some award doesn't have these rates.
+            # Evening Penalty rates
             if selected_award == "MA000003" or selected_award == "MA000004":
                 evening_penalty = filtered_df_penalty[
                     (filtered_df_penalty["clauseDescription"].str.contains("ordinary and penalty rates", case=False)) &
@@ -419,10 +412,9 @@ def main():
             rolling_total_hours_worked = 0.0
             clock_day_pay = 0.0
             clock_total_pay = 0.0
-            days_with_evening_shifts = []
             days_with_more_4hs = []
-            overtime_pay = 0.0
-            ordinary_pay = 0.0
+            #overtime_pay = 0.0
+            #ordinary_pay = 0.0
             evening_hours_decimal = 0.0
 
             for day, data in clock_day_data.items():
@@ -441,19 +433,6 @@ def main():
                     if start_time and end_time and breaks_taken:
                         start_datetime = datetime.datetime.combine(datetime.datetime.today(), start_time)
                         end_datetime = datetime.datetime.combine(datetime.datetime.today(), end_time)
-
-                        # ORIGINAL CODE BEFORE BREAKS FUNCTIONALITY
-                        # time_difference = end_datetime - start_datetime
-                        #
-                        # # Calculate hours and minutes
-                        # hours_worked = time_difference.seconds // 3600
-                        # minutes_worked = (time_difference.seconds // 60) % 60
-                        #
-                        # # For hours x rate calculation per day
-                        # total_minutes_worked = time_difference.seconds // 60  # Total minutes worked
-                        # hours_worked_decimal = total_minutes_worked / 60  # Convert total minutes to decimal hours
-                        #
-                        # rolling_total_hours_worked += hours_worked_decimal
 
                         # MODIFIED CODE TO EXCLUDE BREAKS
                         time_difference = (end_datetime - start_datetime).seconds // 60
@@ -491,15 +470,23 @@ def main():
                             if hours_worked_decimal >= 4:
                                 days_with_more_4hs.append(day)
 
-                            is_evening_penalty = "No"
-                            evening_time = time(18,0)
-                            if end_time > evening_time:
-                                is_evening_penalty = "Yes"
-                                evening_datetime = datetime.datetime.combine(end_datetime.date(), evening_time)
-                                evening_hours_decimal = (end_datetime - evening_datetime).seconds / 3600
+                            # Added evening penalty time for different awards
+                            if selected_award == "MA000009":
+                                is_evening_penalty = "No"
+                                evening_hours_decimal = 0
+                            else:
+                                if selected_award == "MA000003":
+                                    evening_time = time(22, 0)
+                                else:
+                                    evening_time = time(18, 0)
+
+                                if end_time > evening_time:
+                                    is_evening_penalty = "Yes"
+                                    evening_datetime = datetime.datetime.combine(end_datetime.date(), evening_time)
+                                    evening_hours_decimal = (end_datetime - evening_datetime).seconds / 3600
 
                     else:
-                        # If there are no times enter for the Start and End Times, then skip that day and move on
+                        # If there are no times enter for the Start, End and Break Times, then skip that day and move on
                         continue
 
                     # PAY CALCULATIONS MODULE

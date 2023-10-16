@@ -6,9 +6,6 @@ from PIL import Image
 image = Image.open("gallery/APA.png")
 st.image(image, use_column_width=True)
 
-#add_logo("gallery/APA.png", height=50)
-
-
 st.header("Discover Australian Payroll Association", divider="rainbow")
 
 st.markdown('''Welcome to the Australian Payroll Association – your go-to partner for payroll solutions in Australia! 

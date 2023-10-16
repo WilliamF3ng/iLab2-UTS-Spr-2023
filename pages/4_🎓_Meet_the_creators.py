@@ -13,39 +13,23 @@ st.image(image)
 
 col1, col2, col3, col4 = st.columns(4, gap="medium")
 with col1:
-    #st.subheader("Askhaya")
     st.image("gallery/LI-Logo.png")
     st.caption(
        "[Connect with Askhaya](https://www.linkedin.com/in/iaks23/)")
-    # st.markdown(
-    #     "[![Linkedin](https://content.linkedin.com/content/dam/me/business/en-us/amp/brand-site/v2/bg/LI-Bug.svg.original.svg)]"
-    #     "(https://www.linkedin.com/in/iaks23/)")
     st.markdown('''Background in Computer Science. Personal interest in projects with a cause and understanding the payroll industry.''')
 with col2:
-    #st.subheader("Askhaya")
     st.image("gallery/LI-Logo.png")
     st.caption(
         "[Connect with Denneya](https://www.linkedin.com/in/denneya/)")
-    # st.markdown(
-    #     "[![Linkedin](https://content.linkedin.com/content/dam/me/business/en-us/amp/brand-site/v2/bg/LI-Bug.svg.original.svg)]"
-    #     "(https://www.linkedin.com/in/williamf97/)")
     st.markdown('''Background in Mathematics and Statistics. Personal interest in developing resources to educate people.''')
 with col3:
-    #st.subheader("Askhaya")
     st.image("gallery/LI-Logo.png")
     st.caption(
         "[Connect with Shalimar](https://www.linkedin.com/in/shalimar-chalhoub-1690b0200/)")
-    # st.markdown(
-    #     "[![Linkedin](https://content.linkedin.com/content/dam/me/business/en-us/amp/brand-site/v2/bg/LI-Bug.svg.original.svg)]"
-    #     "(https://www.linkedin.com/in/williamf97/)")
-    st.markdown('''Background in Computer Engineering. Personal interest in making sure people are being paid correctly.''')
+    st.markdown('''Background in Computer Engineering. Personal interest in solving real world problems with data.''')
 with col4:
-    #st.subheader("Askhaya")
     st.image("gallery/LI-Logo.png")
     st.caption(
         "[Connect with William](https://www.linkedin.com/in/williamf97/)")
-    # st.markdown(
-    #     "[![Linkedin](https://content.linkedin.com/content/dam/me/business/en-us/amp/brand-site/v2/bg/LI-Bug.svg.original.svg)]"
-    #     "(https://www.linkedin.com/in/williamf97/)")
     st.markdown('''Background in Business Analytics and Compliance Auditing. 
     Personal interest in ensuring that employers are compliant with Fair Work’s regulations.''')
