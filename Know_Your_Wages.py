@@ -413,11 +413,12 @@ def main():
             clock_day_pay = 0.0
             clock_total_pay = 0.0
             days_with_more_4hs = []
-            #overtime_pay = 0.0
-            #ordinary_pay = 0.0
             evening_hours_decimal = 0.0
 
             for day, data in clock_day_data.items():
+
+                evening_hours_decimal = 0.0
+                #
                 start_time = data["start_time"]
                 end_time = data["end_time"]
                 breaks_taken = data["breaks_taken"]
@@ -470,21 +471,19 @@ def main():
                             if hours_worked_decimal >= 4:
                                 days_with_more_4hs.append(day)
 
-                            # Initialise the condition
+                            # Rollback to before hide hospo
                             is_evening_penalty = "No"
-
-                            if selected_award == "MA000009":
-                                is_evening_penalty = "No"
+                            if selected_award == "MA000003":
+                                evening_time = time(22, 0)
                             else:
-                                if selected_award == "MA000003":
-                                    evening_time = time(20, 0)
-                                else:
-                                    evening_time = time(18, 0)
+                                evening_time = time(18, 0)
 
-                                if end_time > evening_time:
-                                    is_evening_penalty = "Yes"
-                                    evening_datetime = datetime.datetime.combine(end_datetime.date(), evening_time)
-                                    evening_hours_decimal = (end_datetime - evening_datetime).seconds / 3600
+                            if end_time > evening_time:
+                                is_evening_penalty = "Yes"
+                                evening_datetime = datetime.datetime.combine(end_datetime.date(), evening_time)
+
+                                evening_hours_timedelta = end_datetime - evening_datetime
+                                evening_hours_decimal = evening_hours_timedelta.seconds / 3600
 
                     else:
                         # If there are no times enter for the Start, End and Break Times, then skip that day and move on
@@ -641,9 +640,9 @@ def main():
             st.caption(":bulb: Gross pay is the total amount of money you earn before taxes or deductions are removed.",
                             help="Your employer may deduct taxes if you've provided your Australian Tax File Number.")
 
-            if is_evening_penalty == "Yes":
-                st.write(f"- For your evening hours, a ${evening_penalty:.2f} evening penalty rate was calculated.")
-                st.caption(":crescent_moon: Evening hours is defined as any hours worked after 6pm from Monday to Friday. This is only applicable to workers covered by the Fast Food Industry and General Retail Awards.",
+            if selected_award in ["MA000003", "MA000004"]:
+                st.write(f"- If you worked any evening hours, a ${evening_penalty:.2f} evening penalty rate will be calculated.")
+                st.caption(":crescent_moon: Evening hours is defined as any hours worked after 10pm (for Fast Food workers) or 6pm (for General Retail workers) from Monday to Friday.",
                        help="If you are unsure of your award, you can find more info on the Find my Award Level page.")
 
             st.write(f" - Your superannuation this week is ${superannuation_per_week:.2f}. If you think this is :red[wrong], please double check you've entered the correct hours above or look at the Next Steps below.")
