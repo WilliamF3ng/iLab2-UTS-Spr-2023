@@ -641,7 +641,7 @@ def main():
             st.caption(":bulb: Gross pay is the total amount of money you earn before taxes or deductions are removed.",
                             help="Your employer may deduct taxes if you've provided your Australian Tax File Number.")
 
-            if selected_award == "MA000003" or selected_award == "MA000004":
+            if is_evening_penalty == "Yes":
                 st.write(f"- For your evening hours, a ${evening_penalty:.2f} evening penalty rate was calculated.")
                 st.caption(":crescent_moon: Evening hours is defined as any hours worked after 6pm from Monday to Friday. This is only applicable to workers covered by the Fast Food Industry and General Retail Awards.",
                        help="If you are unsure of your award, you can find more info on the Find my Award Level page.")
