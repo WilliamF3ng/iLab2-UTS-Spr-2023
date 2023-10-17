@@ -470,13 +470,14 @@ def main():
                             if hours_worked_decimal >= 4:
                                 days_with_more_4hs.append(day)
 
-                            # Added evening penalty time for different awards
+                            # Initialise the condition
+                            is_evening_penalty = "No"
+
                             if selected_award == "MA000009":
                                 is_evening_penalty = "No"
-                                evening_hours_decimal = 0
                             else:
                                 if selected_award == "MA000003":
-                                    evening_time = time(22, 0)
+                                    evening_time = time(20, 0)
                                 else:
                                     evening_time = time(18, 0)
 
